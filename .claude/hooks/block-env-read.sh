@@ -18,7 +18,8 @@ if echo "$INPUT" | grep -q '"file_path"'; then
 else
   # Bash tool — extract command (Python only runs when .env appears in a bash command)
   CMD=$(echo "$INPUT" | python -c "import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('command',''))" 2>/dev/null || echo "")
-  if echo "$CMD" | grep -qE '(cat|less|head|tail|source|\.[[:space:]])[[:space:]]+\.env([[:space:]]|$|\*)'; then
+  if echo "$CMD" | grep -qE '(cat|less|head|tail|source|\.[[:space:]])[[:space:]]+\.env([[:space:]]|$|\*|\.[^/]*)' \
+     && ! echo "$CMD" | grep -qE '\.env\.example'; then
     echo "block-env-read: reading .env via shell is blocked -- check .env.example instead" >&2
     exit 2
   fi
