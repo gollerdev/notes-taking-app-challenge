@@ -7,7 +7,7 @@ description: Executes a plan file using the Ralph Loop workflow. Use when the us
 /execute-plan <plan-file> [--min <n>] [--max <n>]
 ```
 - `--min <n>` (optional) — run at least `n` iterations even if `DONE` is output earlier
-- `--max <n>` (optional) — stop after `n` iterations even if `DONE` has not been output
+- `--max <n>` (optional) — stop after `n` iterations even if `DONE` has not been output (default: 5)
 
 ## Instructions
 
@@ -16,7 +16,7 @@ You are the **loop controller**. You do not execute the plan yourself — you sp
 Follow these steps exactly:
 
 1. Read the plan file at **$0** to understand its scope and acceptance criteria
-2. Determine iteration bounds from `--min` and `--max` arguments (default: no bounds)
+2. Determine iteration bounds from `--min` and `--max` arguments (`--max` defaults to 5 if not provided)
 3. Spawn a subagent with the prompt below, passing the plan file path and current iteration number
 4. Wait for the subagent to return its result
 5. If the subagent outputs `DONE` **and** the iteration count is ≥ `--min` (or no min was set): stop the loop and output `DONE`

@@ -32,7 +32,7 @@ Follow these steps exactly:
    - `backend/CLAUDE.md` — Django conventions: uv, DRF, pytest, ruff, PostgreSQL
    - `frontend/CLAUDE.md` — Next.js conventions: App Router, Tailwind only, Figma-first, vitest, httpOnly cookies
 
-4. **Read an existing plan** (`docs/plans/1-project-scaffold.md`) to internalize the exact format and section structure.
+4. **Read an existing plan** to internalize the exact format and section structure. Run `ls docs/plans/*.md 2>/dev/null | head -1` to find the most recent one, then read it. Skip this step if no plan files exist yet.
 
 5. **Derive the plan file path**:
    - Slug = lowercase title with spaces replaced by hyphens, truncated to ~40 chars

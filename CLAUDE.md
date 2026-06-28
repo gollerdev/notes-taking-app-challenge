@@ -29,7 +29,7 @@ Notes-taking app challenge for Turbo AI. Built with Django REST (backend) and Ne
 
 ## Branching
 - `main` is the only long-lived branch
-- Feature branches: `feat/<issue-number>-<slug>` (e.g. `feat/1-project-scaffold`)
+- Feature branches: use the branch name GitHub generates when creating branches from issues (e.g. `1-project-scaffold-and-agentic-workflow-setup`)
 - One branch → one PR → `Closes #N` in the PR description
 - Delete branch after merge
 

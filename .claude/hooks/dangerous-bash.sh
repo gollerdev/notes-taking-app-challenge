@@ -15,7 +15,7 @@ BLOCKED_PATTERNS=(
 )
 
 for PATTERN in "${BLOCKED_PATTERNS[@]}"; do
-  if echo "$COMMAND" | grep -qF "$PATTERN"; then
+  if echo "$COMMAND" | grep -qiF "$PATTERN"; then
     echo "dangerous-bash: blocked dangerous command matching '$PATTERN'" >&2
     exit 2
   fi

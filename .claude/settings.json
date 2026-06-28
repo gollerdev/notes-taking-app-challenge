@@ -19,6 +19,10 @@
       {
         "matcher": "Edit",
         "hooks": [{"type": "command", "command": "bash .claude/hooks/secret-guard.sh"}]
+      },
+      {
+        "matcher": "MultiEdit",
+        "hooks": [{"type": "command", "command": "bash .claude/hooks/secret-guard.sh"}]
       }
     ],
     "PostToolUse": [
@@ -31,6 +35,13 @@
       },
       {
         "matcher": "Edit",
+        "hooks": [
+          {"type": "command", "command": "bash .claude/hooks/ruff-fix.sh"},
+          {"type": "command", "command": "bash .claude/hooks/migration-reminder.sh"}
+        ]
+      },
+      {
+        "matcher": "MultiEdit",
         "hooks": [
           {"type": "command", "command": "bash .claude/hooks/ruff-fix.sh"},
           {"type": "command", "command": "bash .claude/hooks/migration-reminder.sh"}

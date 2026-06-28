@@ -7,5 +7,5 @@ FILE=$(echo "$INPUT" | python -c "import sys,json; d=json.load(sys.stdin); print
 
 [[ -z "$FILE" || "$FILE" != *.py ]] && exit 0
 
-uv run ruff check --fix "$FILE" 2>/dev/null
+uv run ruff check --fix "$FILE"
 exit 0
