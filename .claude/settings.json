@@ -1,0 +1,41 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [{"type": "command", "command": "bash .claude/hooks/block-env-read.sh"}]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {"type": "command", "command": "bash .claude/hooks/dangerous-bash.sh"},
+          {"type": "command", "command": "bash .claude/hooks/block-env-read.sh"}
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [{"type": "command", "command": "bash .claude/hooks/secret-guard.sh"}]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [{"type": "command", "command": "bash .claude/hooks/secret-guard.sh"}]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {"type": "command", "command": "bash .claude/hooks/ruff-fix.sh"},
+          {"type": "command", "command": "bash .claude/hooks/migration-reminder.sh"}
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {"type": "command", "command": "bash .claude/hooks/ruff-fix.sh"},
+          {"type": "command", "command": "bash .claude/hooks/migration-reminder.sh"}
+        ]
+      }
+    ]
+  }
+}
