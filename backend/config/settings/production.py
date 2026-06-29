@@ -12,7 +12,7 @@ from .base import *  # noqa: F403
 DEBUG = False
 
 # No default — raises UndefinedValueError at startup if unset.
-ALLOWED_HOSTS: list[str] = config(
+ALLOWED_HOSTS: list[str] = config(  # type: ignore[no-redef]
     "ALLOWED_HOSTS",
     cast=lambda v: [h.strip() for h in v.split(",") if h.strip()],
 )
@@ -25,7 +25,7 @@ CORS_ALLOWED_ORIGINS: list[str] = config(
 )
 
 # Restrict to JSON-only; BrowsableAPIRenderer is dev-only.
-REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = (  # type: ignore[name-defined]  # noqa: F405
+REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = (  # type: ignore[name-defined,unused-ignore]  # noqa: F405
     "rest_framework.renderers.JSONRenderer",
 )
 

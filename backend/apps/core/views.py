@@ -1,5 +1,6 @@
 """Views for the core app."""
 
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -12,6 +13,14 @@ class HealthCheckView(APIView):
     permission_classes = [AllowAny]
     authentication_classes: list[type] = []
 
+    @extend_schema(
+        tags=["Health"],
+        operation_id="health_check",
+        summary="Liveness probe",
+        responses={
+            200: OpenApiResponse(description="Service is up."),
+        },
+    )
     def get(self, request: Request) -> Response:
         """Return a 200 response confirming the service is up.
 
