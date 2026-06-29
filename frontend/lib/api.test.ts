@@ -45,15 +45,18 @@ describe("api", () => {
     it("throws ApiError on non-2xx response", async () => {
       mockFetch.mockResolvedValue(jsonResponse({ detail: "Not found" }, 404));
 
-      await expect(api.get("/missing/")).rejects.toThrow(ApiError);
+      let caughtError: unknown;
       try {
         await api.get("/missing/");
       } catch (error) {
-        expect(error).toBeInstanceOf(ApiError);
-        const apiError = error as ApiError;
-        expect(apiError.status).toBe(404);
-        expect(apiError.body).toEqual({ detail: "Not found" });
+        caughtError = error;
       }
+
+      expect(caughtError).toBeInstanceOf(ApiError);
+      const apiError = caughtError as ApiError;
+      expect(apiError.status).toBe(404);
+      expect(apiError.body).toEqual({ detail: "Not found" });
+      expect(mockFetch).toHaveBeenCalledOnce();
     });
 
     it("throws ApiError with text body when JSON parse fails", async () => {
