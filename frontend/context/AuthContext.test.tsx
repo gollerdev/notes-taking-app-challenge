@@ -29,6 +29,7 @@ function TestConsumer() {
 describe("AuthContext", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
   });
 
   it("starts unauthenticated with null tokens", () => {
@@ -126,5 +127,73 @@ describe("AuthContext", () => {
     );
 
     consoleSpy.mockRestore();
+  });
+
+  it("initializes access and refresh tokens from localStorage on mount", () => {
+    localStorage.setItem("access_token", "stored-access");
+    localStorage.setItem("refresh_token", "stored-refresh");
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>,
+    );
+
+    expect(screen.getByTestId("authenticated").textContent).toBe("true");
+    expect(screen.getByTestId("access").textContent).toBe("stored-access");
+    expect(screen.getByTestId("refresh").textContent).toBe("stored-refresh");
+  });
+
+  it("calls setAccessToken with stored token on mount", () => {
+    localStorage.setItem("access_token", "stored-access");
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>,
+    );
+
+    expect(setAccessToken).toHaveBeenCalledWith("stored-access");
+  });
+
+  it("does not call setAccessToken on mount when no token is stored", () => {
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>,
+    );
+
+    expect(setAccessToken).not.toHaveBeenCalled();
+  });
+
+  it("login stores refresh token in localStorage", () => {
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>,
+    );
+
+    act(() => {
+      screen.getByTestId("login").click();
+    });
+
+    expect(localStorage.getItem("refresh_token")).toBe("test-refresh");
+  });
+
+  it("logout removes refresh token from localStorage", () => {
+    localStorage.setItem("refresh_token", "stored-refresh");
+
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>,
+    );
+
+    act(() => {
+      screen.getByTestId("logout").click();
+    });
+
+    expect(localStorage.getItem("refresh_token")).toBeNull();
+    expect(setAccessToken).toHaveBeenCalledWith(null);
   });
 });

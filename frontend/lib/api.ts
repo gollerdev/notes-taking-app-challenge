@@ -1,29 +1,29 @@
 const BASE_URL =
   (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000") + "/api/v1";
 
-/**
- * In-memory access token storage (Issue #11).
- *
- * Tokens are intentionally kept in memory only — never written to
- * localStorage or cookies. They are lost on page refresh by design.
- * AuthContext calls setAccessToken() on login/logout so that
- * buildHeaders() can attach the Bearer token to outgoing requests.
- */
+const ACCESS_TOKEN_KEY = "access_token";
+
 let accessToken: string | null = null;
 
-/** Sets the in-memory access token. Called by AuthContext on login/logout. */
+/** Sets the access token in memory and persists it to localStorage. Pass null to clear on logout. */
 export function setAccessToken(token: string | null): void {
   accessToken = token;
+  if (typeof window !== "undefined") {
+    if (token !== null) {
+      localStorage.setItem(ACCESS_TOKEN_KEY, token);
+    } else {
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+    }
+  }
 }
 
-/**
- * Returns the current access token if one exists.
- *
- * Storage: in-memory only (set via setAccessToken). Tokens are
- * intentionally lost on refresh per Issue #11.
- */
+/** Returns the in-memory access token, falling back to localStorage (e.g. after a page reload). */
 function getAccessToken(): string | null {
-  return accessToken;
+  if (accessToken !== null) return accessToken;
+  if (typeof window !== "undefined") {
+    return localStorage.getItem(ACCESS_TOKEN_KEY);
+  }
+  return null;
 }
 
 /** Builds common headers including Authorization when a token is present. */

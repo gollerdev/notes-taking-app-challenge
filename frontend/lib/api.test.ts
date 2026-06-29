@@ -139,6 +139,19 @@ describe("api", () => {
     });
   });
 
+  describe("setAccessToken", () => {
+    it("writes token to localStorage", () => {
+      setAccessToken("stored-token");
+      expect(localStorage.getItem("access_token")).toBe("stored-token");
+    });
+
+    it("removes token from localStorage when called with null", () => {
+      setAccessToken("stored-token");
+      setAccessToken(null);
+      expect(localStorage.getItem("access_token")).toBeNull();
+    });
+  });
+
   describe("auth headers", () => {
     it("includes Authorization header when token exists", async () => {
       setAccessToken("test-token-123");
@@ -159,6 +172,18 @@ describe("api", () => {
       const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
       const headers = options.headers as Record<string, string>;
       expect(headers["Authorization"]).toBeUndefined();
+    });
+
+    it("reads Authorization token from localStorage when in-memory token is absent", async () => {
+      // setAccessToken(null) in beforeEach cleared localStorage; set it directly to simulate a reload
+      localStorage.setItem("access_token", "persisted-token");
+      mockFetch.mockResolvedValue(jsonResponse({ ok: true }));
+
+      await api.get("/notes/");
+
+      const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+      const headers = options.headers as Record<string, string>;
+      expect(headers["Authorization"]).toBe("Bearer persisted-token");
     });
   });
 
