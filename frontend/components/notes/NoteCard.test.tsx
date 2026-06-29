@@ -1,11 +1,17 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { NoteCard } from "./NoteCard";
 import { mockNote } from "@/test-utils/factories";
+
+const mockPush = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
 
 describe("NoteCard", () => {
   afterEach(() => {
     vi.useRealTimers();
+    vi.clearAllMocks();
   });
 
   it("renders the note title", () => {
@@ -97,5 +103,40 @@ describe("NoteCard", () => {
     const catEl = screen.getByText("Personal");
     expect(dateEl.className).toContain("font-bold");
     expect(catEl.className).toContain("font-normal");
+  });
+
+  it("navigates to /notes/[id] when clicked", () => {
+    const note = mockNote({ id: "click-test-id" });
+    render(<NoteCard note={note} />);
+    fireEvent.click(screen.getByRole("button"));
+    expect(mockPush).toHaveBeenCalledWith("/notes/click-test-id");
+    expect(mockPush).toHaveBeenCalledTimes(1);
+  });
+
+  it("has cursor-pointer class for clickable appearance", () => {
+    const note = mockNote();
+    const { container } = render(<NoteCard note={note} />);
+    expect(container.firstElementChild?.className).toContain("cursor-pointer");
+  });
+
+  it("navigates to /notes/[id] when Enter key is pressed", () => {
+    const note = mockNote({ id: "keyboard-test-id" });
+    render(<NoteCard note={note} />);
+    fireEvent.keyDown(screen.getByRole("button"), { key: "Enter" });
+    expect(mockPush).toHaveBeenCalledWith("/notes/keyboard-test-id");
+  });
+
+  it("navigates to /notes/[id] when Space key is pressed", () => {
+    const note = mockNote({ id: "space-test-id" });
+    render(<NoteCard note={note} />);
+    fireEvent.keyDown(screen.getByRole("button"), { key: " " });
+    expect(mockPush).toHaveBeenCalledWith("/notes/space-test-id");
+  });
+
+  it("does not navigate on other key presses", () => {
+    const note = mockNote({ id: "no-nav-id" });
+    render(<NoteCard note={note} />);
+    fireEvent.keyDown(screen.getByRole("button"), { key: "Tab" });
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });

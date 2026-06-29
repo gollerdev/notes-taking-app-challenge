@@ -72,4 +72,51 @@ describe("notesService", () => {
       expect(api.delete).not.toHaveBeenCalled();
     });
   });
+
+  describe("getById", () => {
+    it("calls api.get with /notes/:id/ and returns the result", async () => {
+      const note = mockNote();
+      vi.mocked(api.get).mockResolvedValue(note);
+
+      const result = await notesService.getById(note.id);
+
+      expect(api.get).toHaveBeenCalledWith(`/notes/${note.id}/`);
+      expect(api.get).toHaveBeenCalledTimes(1);
+      expect(result).toBe(note);
+    });
+
+    it("does not call any other api method", async () => {
+      vi.mocked(api.get).mockResolvedValue(mockNote());
+
+      await notesService.getById("some-id");
+
+      expect(api.post).not.toHaveBeenCalled();
+      expect(api.patch).not.toHaveBeenCalled();
+      expect(api.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("patch", () => {
+    it("calls api.patch with /notes/:id/ and the payload and returns the result", async () => {
+      const note = mockNote();
+      const payload: Partial<CreateNotePayload> = { title: "Updated Title" };
+      vi.mocked(api.patch).mockResolvedValue({ ...note, ...payload });
+
+      const result = await notesService.patch(note.id, payload);
+
+      expect(api.patch).toHaveBeenCalledWith(`/notes/${note.id}/`, payload);
+      expect(api.patch).toHaveBeenCalledTimes(1);
+      expect(result).toEqual({ ...note, ...payload });
+    });
+
+    it("does not call any other api method", async () => {
+      vi.mocked(api.patch).mockResolvedValue(mockNote());
+
+      await notesService.patch("some-id", { body: "Updated" });
+
+      expect(api.get).not.toHaveBeenCalled();
+      expect(api.post).not.toHaveBeenCalled();
+      expect(api.delete).not.toHaveBeenCalled();
+    });
+  });
 });

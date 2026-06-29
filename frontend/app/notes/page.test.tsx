@@ -159,109 +159,9 @@ describe("NotesPage", () => {
     expect(screen.getByText("School Note")).toBeInTheDocument();
   });
 
-  it("creates a note with random_thoughts when clicking + New Note from All Categories", async () => {
-    const existingNotes = [
-      mockNote({
-        title: "Existing Note",
-        category: "random_thoughts",
-        created_at: new Date().toISOString(),
-      }),
-    ];
-    const createdNote = mockNote({
-      title: "Untitled",
-      category: "random_thoughts",
-      created_at: new Date().toISOString(),
-    });
-
+  it("NewNoteButton navigates to /notes/new when clicked", async () => {
     vi.mocked(useAuth).mockReturnValue(authValue);
-    vi.mocked(notesService.getAll).mockResolvedValue(existingNotes);
-    vi.mocked(notesService.create).mockResolvedValue(createdNote);
-
-    render(<NotesPage />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Existing Note")).toBeInTheDocument();
-    });
-
-    // Click "+ New Note"
-    fireEvent.click(screen.getByText("New Note"));
-
-    await waitFor(() => {
-      expect(notesService.create).toHaveBeenCalledWith({
-        title: "Untitled",
-        body: "",
-        category: "random_thoughts",
-      });
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText("Untitled")).toBeInTheDocument();
-    });
-  });
-
-  it("creates a note with the selected category when a specific category is active", async () => {
-    const existingNotes = [
-      mockNote({
-        title: "School Note",
-        category: "school",
-        created_at: new Date().toISOString(),
-      }),
-    ];
-    const createdNote = mockNote({
-      title: "Untitled",
-      category: "school",
-      created_at: new Date().toISOString(),
-    });
-
-    vi.mocked(useAuth).mockReturnValue(authValue);
-    vi.mocked(notesService.getAll).mockResolvedValue(existingNotes);
-    vi.mocked(notesService.create).mockResolvedValue(createdNote);
-
-    render(<NotesPage />);
-
-    await waitFor(() => {
-      // Wait for notes to load (empty state for random_thoughts is fine)
-      expect(screen.queryByText("Loading notes...")).not.toBeInTheDocument();
-    });
-
-    // Select "School" category
-    const schoolButtons = screen.getAllByText("School");
-    const sidebarSchool = schoolButtons.find((el) => el.closest("button") !== null);
-    fireEvent.click(sidebarSchool!);
-
-    await waitFor(() => {
-      expect(screen.getByText("School Note")).toBeInTheDocument();
-    });
-
-    // Click "+ New Note"
-    fireEvent.click(screen.getByText("New Note"));
-
-    await waitFor(() => {
-      expect(notesService.create).toHaveBeenCalledWith({
-        title: "Untitled",
-        body: "",
-        category: "school",
-      });
-    });
-  });
-
-  it("creates a note with random_thoughts after switching back to All Categories", async () => {
-    const existingNotes = [
-      mockNote({
-        title: "A Note",
-        category: "personal",
-        created_at: new Date().toISOString(),
-      }),
-    ];
-    const createdNote = mockNote({
-      title: "Untitled",
-      category: "random_thoughts",
-      created_at: new Date().toISOString(),
-    });
-
-    vi.mocked(useAuth).mockReturnValue(authValue);
-    vi.mocked(notesService.getAll).mockResolvedValue(existingNotes);
-    vi.mocked(notesService.create).mockResolvedValue(createdNote);
+    vi.mocked(notesService.getAll).mockResolvedValue([]);
 
     render(<NotesPage />);
 
@@ -269,22 +169,29 @@ describe("NotesPage", () => {
       expect(screen.queryByText("Loading notes...")).not.toBeInTheDocument();
     });
 
-    // Select Personal, then go back to All Categories
-    const personalButtons = screen.getAllByText("Personal");
-    const sidebarPersonal = personalButtons.find((el) => el.closest("button") !== null);
-    fireEvent.click(sidebarPersonal!);
-    fireEvent.click(screen.getByText("All Categories"));
-
-    // Click "+ New Note" — should default to random_thoughts
     fireEvent.click(screen.getByText("New Note"));
+    expect(mockPush).toHaveBeenCalledWith("/notes/new");
+  });
+
+  it("clicking a NoteCard navigates to /notes/[id]", async () => {
+    const note = mockNote({
+      id: "card-nav-test-id",
+      title: "Clickable Note",
+      category: "personal",
+      created_at: new Date().toISOString(),
+    });
+    vi.mocked(useAuth).mockReturnValue(authValue);
+    vi.mocked(notesService.getAll).mockResolvedValue([note]);
+
+    render(<NotesPage />);
 
     await waitFor(() => {
-      expect(notesService.create).toHaveBeenCalledWith({
-        title: "Untitled",
-        body: "",
-        category: "random_thoughts",
-      });
+      expect(screen.getByText("Clickable Note")).toBeInTheDocument();
     });
+
+    // Click the note card
+    fireEvent.click(screen.getByText("Clickable Note"));
+    expect(mockPush).toHaveBeenCalledWith("/notes/card-nav-test-id");
   });
 
   it("shows loading state while notes are being fetched", () => {
@@ -307,24 +214,6 @@ describe("NotesPage", () => {
       expect(
         screen.getByText("Failed to load notes. Please try again later."),
       ).toBeInTheDocument();
-    });
-  });
-
-  it("shows error message when creating a note fails", async () => {
-    vi.mocked(useAuth).mockReturnValue(authValue);
-    vi.mocked(notesService.getAll).mockResolvedValue([]);
-    vi.mocked(notesService.create).mockRejectedValue(new Error("Server error"));
-
-    render(<NotesPage />);
-
-    await waitFor(() => {
-      expect(screen.queryByText("Loading notes...")).not.toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByText("New Note"));
-
-    await waitFor(() => {
-      expect(screen.getByText("Failed to create note.")).toBeInTheDocument();
     });
   });
 });
