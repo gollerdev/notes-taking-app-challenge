@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create .env file for CI
+        run: touch .env
+
+      - name: Build and start services
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml up --build -d
+
+      - name: Wait for database to be healthy
+        run: |
+          docker compose exec -T db pg_isready -U notes_user -d notes_test
+
+      - name: Run backend migrations
+        run: |
+          docker compose exec -T web uv run python manage.py migrate
+
+      # ── Backend quality gates ──────────────────────────────
+
+      - name: Backend — lint
+        run: docker compose exec -T web uv run ruff check .
+
+      - name: Backend — format check
+        run: docker compose exec -T web uv run ruff format --check .
+
+      - name: Backend — type check
+        run: docker compose exec -T web uv run mypy .
+
+      - name: Backend — tests with coverage
+        run: |
+          docker compose exec -T web uv run pytest \
+            --cov=apps \
+            --cov-report=term-missing \
+            --cov-fail-under=100
+
+      - name: Backend — validate OpenAPI schema
+        run: |
+          docker compose exec -T web uv run python manage.py spectacular \
+            --validate --fail-on-warn
+
+      # ── Frontend quality gates ─────────────────────────────
+
+      - name: Frontend — type check
+        run: docker compose exec -T frontend npm run typecheck
+
+      - name: Frontend — lint
+        run: docker compose exec -T frontend npm run lint
+
+      - name: Frontend — format check
+        run: docker compose exec -T frontend npm run format:check
+
+      - name: Frontend — tests with coverage
+        run: docker compose exec -T frontend npm run test:coverage
+
+      # ── Teardown ──────────────────────────────────────────
+
+      - name: Tear down services
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml down --volumes
