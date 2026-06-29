@@ -1,0 +1,13 @@
+# Normalize line endings: store LF in git, check out LF everywhere.
+# Prevents CRLF (Windows) from breaking Prettier/ruff format checks in CI.
+* text=auto eol=lf
+
+# Explicitly treat common binary types as binary (never touch line endings).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
