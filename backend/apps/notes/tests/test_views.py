@@ -129,6 +129,20 @@ class NoteViewSetCreateTest(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    @patch("apps.notes.views.NoteService.create_note")
+    def test_create_response_includes_id_and_timestamps(self, mock_create: MagicMock):
+        note = NoteFactory.create(owner=self.user)
+        mock_create.return_value = note
+        payload = {"title": note.title, "body": note.body}
+
+        response = self.client.post("/api/v1/notes/", payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIsNotNone(response.data["id"])
+        self.assertIsNotNone(response.data["created_at"])
+        self.assertIsNotNone(response.data["updated_at"])
+        self.assertEqual(str(response.data["id"]), str(note.pk))
+
 
 class NoteViewSetPartialUpdateTest(TestCase):
     def setUp(self):
