@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { api, ApiError } from "./api";
+import { api, ApiError, setAccessToken } from "./api";
 
 // Mock global fetch
 const mockFetch = vi.fn();
@@ -17,16 +17,12 @@ function jsonResponse(data: unknown, status = 200): Response {
 describe("api", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Clear any stored token
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("access_token");
-    }
+    // Clear in-memory token
+    setAccessToken(null);
   });
 
   afterEach(() => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("access_token");
-    }
+    setAccessToken(null);
   });
 
   describe("get", () => {
@@ -145,7 +141,7 @@ describe("api", () => {
 
   describe("auth headers", () => {
     it("includes Authorization header when token exists", async () => {
-      localStorage.setItem("access_token", "test-token-123");
+      setAccessToken("test-token-123");
       mockFetch.mockResolvedValue(jsonResponse({ ok: true }));
 
       await api.get("/notes/");
@@ -170,7 +166,6 @@ describe("api", () => {
     const originalApiUrl = process.env.NEXT_PUBLIC_API_URL;
 
     afterEach(() => {
-      vi.unstubAllGlobals();
       if (originalApiUrl === undefined) {
         delete process.env.NEXT_PUBLIC_API_URL;
       } else {
@@ -201,19 +196,6 @@ describe("api", () => {
 
       const [url] = mockFetch.mock.calls[0] as [string];
       expect(url).toBe("http://localhost:8000/api/v1/health/");
-    });
-
-    it("omits the Authorization header in a non-browser (SSR) context", async () => {
-      // typeof window === "undefined" exercises the server-side branch of
-      // getAccessToken, which must return null rather than touch localStorage.
-      vi.stubGlobal("window", undefined);
-      mockFetch.mockResolvedValue(jsonResponse({ ok: true }));
-
-      await api.get("/notes/");
-
-      const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
-      const headers = options.headers as Record<string, string>;
-      expect(headers["Authorization"]).toBeUndefined();
     });
   });
 });
