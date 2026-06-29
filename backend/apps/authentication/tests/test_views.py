@@ -213,9 +213,6 @@ class LogoutViewTest(TestCase):
 
     @patch("apps.authentication.views.AuthService.logout")
     def test_logout_success_returns_205(self, mock_logout: MagicMock):
-        user = UserFactory()
-        self.client.force_authenticate(user=user)
-
         response = self.client.post(self.url, {"refresh": "some-token"}, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_205_RESET_CONTENT)
@@ -224,23 +221,22 @@ class LogoutViewTest(TestCase):
     @patch("apps.authentication.views.AuthService.logout")
     def test_logout_invalid_token_returns_400(self, mock_logout: MagicMock):
         mock_logout.side_effect = TokenError("Token is invalid or expired")
-        user = UserFactory()
-        self.client.force_authenticate(user=user)
 
         response = self.client.post(self.url, {"refresh": "bad-token"}, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_logout_unauthenticated_returns_401(self):
+    @patch("apps.authentication.views.AuthService.logout")
+    def test_logout_accepts_unauthenticated_requests(self, mock_logout: MagicMock):
+        """AllowAny must be active on logout — no 401/403 for anonymous."""
         response = self.client.post(self.url, {"refresh": "some-token"}, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertNotIn(
+            response.status_code,
+            [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN],
+        )
 
     @patch("apps.authentication.views.AuthService")
     def test_logout_no_other_service_methods_called(self, mock_service: MagicMock):
-        user = UserFactory()
-        self.client.force_authenticate(user=user)
-
         self.client.post(self.url, {"refresh": "some-token"}, format="json")
 
         called = [name for name, _, _ in mock_service.mock_calls]

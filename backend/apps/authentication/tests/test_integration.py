@@ -11,9 +11,7 @@ class AuthenticationIntegrationTest(TestCase):
     Exercises URL routing -> view -> serializer -> service -> repository
     -> ORM -> JWT issuance -> blacklist against the real test database.
 
-    The logout endpoint (``IsAuthenticated``) is used as the protected
-    probe for 401-vs-authenticated assertions because no other protected
-    endpoint exists yet.
+    Logout is AllowAny; the refresh token alone is sufficient to blacklist.
     """
 
     def setUp(self):
@@ -34,35 +32,22 @@ class AuthenticationIntegrationTest(TestCase):
         self.assertIn("access", register_resp.data)
         self.assertIn("refresh", register_resp.data)
 
-        access_token = register_resp.data["access"]
         refresh_token = register_resp.data["refresh"]
 
-        # 2. Protected endpoint without auth -> 401
-        # LogoutView has IsAuthenticated, proving global default is active.
-        no_auth_resp = self.client.post(
+        # 2. Logout with only the refresh token (no access token needed) -> 205
+        # Proves AllowAny is active and the refresh token is sufficient to blacklist.
+        logout_register_resp = self.client.post(
             self.logout_url,
             {"refresh": refresh_token},
             format="json",
         )
-        self.assertEqual(no_auth_resp.status_code, status.HTTP_401_UNAUTHORIZED)
-
-        # 3. Protected endpoint with Bearer token -> 205
-        # Proves the token resolves to a valid user (request.user is populated).
-        # Also verify the resolved identity matches the registered account.
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
-        auth_resp = self.client.post(
-            self.logout_url,
-            {"refresh": refresh_token},
-            format="json",
-        )
-        self.assertEqual(auth_resp.status_code, status.HTTP_205_RESET_CONTENT)
+        self.assertEqual(logout_register_resp.status_code, status.HTTP_205_RESET_CONTENT)
 
         # Verify identity: the registered user exists and matches expectations.
         user = User.objects.get(email="integration@example.com")
         self.assertEqual(user.email, "integration@example.com")
-        self.client.credentials()  # Clear credentials
 
-        # 4. Login with the same credentials -> 200 + fresh tokens
+        # 3. Login with the same credentials -> 200 + fresh tokens
         login_resp = self.client.post(
             self.login_url,
             {"email": "integration@example.com", "password": "securepass123"},
@@ -74,7 +59,7 @@ class AuthenticationIntegrationTest(TestCase):
 
         login_refresh = login_resp.data["refresh"]
 
-        # 5. Refresh -> 200 + rotated pair; old refresh is blacklisted
+        # 4. Refresh -> 200 + rotated pair; old refresh is blacklisted
         refresh_resp = self.client.post(
             self.refresh_url,
             {"refresh": login_refresh},
@@ -92,10 +77,8 @@ class AuthenticationIntegrationTest(TestCase):
         )
         self.assertEqual(second_refresh_resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        # 6. Logout with a valid refresh -> 205; reuse fails
+        # 5. Logout with a valid refresh -> 205; reuse fails
         new_refresh = refresh_resp.data["refresh"]
-        new_access = refresh_resp.data["access"]
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {new_access}")
 
         logout_resp = self.client.post(
             self.logout_url,
