@@ -41,8 +41,14 @@ class NoteSerializerValidateTitleTest(TestCase):
 
 
 class NotePartialSerializerTest(TestCase):
-    def test_all_fields_are_optional(self):
+    def test_empty_body_is_invalid(self):
         serializer = NotePartialSerializer(data={})
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("non_field_errors", serializer.errors)
+
+    def test_single_field_is_valid(self):
+        serializer = NotePartialSerializer(data={"title": "New title"})
 
         self.assertTrue(serializer.is_valid())
 

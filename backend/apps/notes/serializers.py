@@ -62,3 +62,21 @@ class NotePartialSerializer(NoteSerializer):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.required = False
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        """Reject PATCH requests that supply no writable fields.
+
+        Args:
+            attrs: The validated field values from the request body.
+
+        Returns:
+            The unchanged attrs dict if at least one field is present.
+
+        Raises:
+            serializers.ValidationError: If the request body is empty.
+        """
+        if not attrs:
+            raise serializers.ValidationError(
+                "At least one field must be provided."
+            )
+        return attrs

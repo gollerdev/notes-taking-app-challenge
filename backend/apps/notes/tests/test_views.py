@@ -182,6 +182,23 @@ class NoteViewSetPartialUpdateTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         mock_update.assert_not_called()
 
+    @patch("apps.notes.views.NoteService.partial_update")
+    @patch("apps.notes.views.NoteService.get_user_notes")
+    def test_patch_empty_body_returns_400(
+        self, mock_get: MagicMock, mock_update: MagicMock
+    ):
+        note = NoteFactory(owner=self.user)
+        mock_get.return_value = Note.objects.filter(pk=note.pk)
+
+        response = self.client.patch(
+            f"/api/v1/notes/{note.pk}/",
+            {},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        mock_update.assert_not_called()
+
     def test_patch_unauthenticated_returns_401(self):
         self.client.force_authenticate(user=None)
         fake_id = uuid.uuid4()

@@ -64,7 +64,7 @@ class NoteViewSet(ModelViewSet[Note]):
         Args:
             serializer: The validated serializer instance.
         """
-        NoteService.partial_update(self.get_object(), serializer.validated_data)
+        NoteService.partial_update(serializer.instance, serializer.validated_data)
 
     @extend_schema(
         tags=["Notes"],
