@@ -69,6 +69,7 @@ addopts = "--cov=apps --cov-report=term-missing --cov-fail-under=100"
 omit = [
     "*/migrations/*",
     "*/settings/*",
+    "*/tests/*",
     "manage.py",
     "*/__init__.py",
 ]
