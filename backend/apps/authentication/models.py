@@ -71,7 +71,7 @@ class UserManager(BaseUserManager["User"]):
         return self.create_user(email, password, **extra_fields)
 
 
-class User(AbstractUser):  # type: ignore[django-manager-missing]
+class User(AbstractUser):
     """Custom user model using email as the sole login identifier.
 
     The ``username`` field from ``AbstractUser`` is removed entirely.
