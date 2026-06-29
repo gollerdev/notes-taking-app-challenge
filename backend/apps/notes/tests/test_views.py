@@ -131,7 +131,7 @@ class NoteViewSetCreateTest(TestCase):
 
     @patch("apps.notes.views.NoteService.create_note")
     def test_create_response_includes_id_and_timestamps(self, mock_create: MagicMock):
-        note = NoteFactory.build(owner=self.user)
+        note = NoteFactory.create(owner=self.user)
         mock_create.return_value = note
         payload = {"title": note.title, "body": note.body}
 
