@@ -165,4 +165,55 @@ describe("api", () => {
       expect(headers["Authorization"]).toBeUndefined();
     });
   });
+
+  describe("environment-dependent behavior", () => {
+    const originalApiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      if (originalApiUrl === undefined) {
+        delete process.env.NEXT_PUBLIC_API_URL;
+      } else {
+        process.env.NEXT_PUBLIC_API_URL = originalApiUrl;
+      }
+      vi.resetModules();
+    });
+
+    it("uses NEXT_PUBLIC_API_URL as the base URL when it is set", async () => {
+      process.env.NEXT_PUBLIC_API_URL = "https://api.example.com";
+      vi.resetModules();
+      const { api: freshApi } = await import("./api");
+      mockFetch.mockResolvedValue(jsonResponse({ ok: true }));
+
+      await freshApi.get("/health/");
+
+      const [url] = mockFetch.mock.calls[0] as [string];
+      expect(url).toBe("https://api.example.com/api/v1/health/");
+    });
+
+    it("falls back to localhost when NEXT_PUBLIC_API_URL is unset", async () => {
+      delete process.env.NEXT_PUBLIC_API_URL;
+      vi.resetModules();
+      const { api: freshApi } = await import("./api");
+      mockFetch.mockResolvedValue(jsonResponse({ ok: true }));
+
+      await freshApi.get("/health/");
+
+      const [url] = mockFetch.mock.calls[0] as [string];
+      expect(url).toBe("http://localhost:8000/api/v1/health/");
+    });
+
+    it("omits the Authorization header in a non-browser (SSR) context", async () => {
+      // typeof window === "undefined" exercises the server-side branch of
+      // getAccessToken, which must return null rather than touch localStorage.
+      vi.stubGlobal("window", undefined);
+      mockFetch.mockResolvedValue(jsonResponse({ ok: true }));
+
+      await api.get("/notes/");
+
+      const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+      const headers = options.headers as Record<string, string>;
+      expect(headers["Authorization"]).toBeUndefined();
+    });
+  });
 });
