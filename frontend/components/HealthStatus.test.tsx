@@ -24,9 +24,11 @@ describe("HealthStatus", () => {
 
   it("shows loading state initially", () => {
     mockedApi.get.mockReturnValue(new Promise(() => {}));
-    render(<HealthStatus />);
+    const { unmount } = render(<HealthStatus />);
     expect(screen.getByTestId("health-loading")).toBeInTheDocument();
     expect(screen.getByText("Checking backend...")).toBeInTheDocument();
+    // Unmount explicitly so the never-resolving promise doesn't trigger act() warnings
+    unmount();
   });
 
   it("shows up state when backend returns ok", async () => {

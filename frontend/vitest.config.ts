@@ -17,6 +17,9 @@ export default defineConfig({
       provider: "v8",
       thresholds: {
         lines: 100,
+        branches: 100,
+        functions: 100,
+        statements: 100,
       },
       exclude: [
         "app/layout.tsx",
