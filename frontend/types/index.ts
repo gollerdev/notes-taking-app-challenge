@@ -1,6 +1,6 @@
 /** Represents a note returned by the API. */
 export interface Note {
-  id: number;
+  id: string;
   title: string;
   body: string;
   category: string;
