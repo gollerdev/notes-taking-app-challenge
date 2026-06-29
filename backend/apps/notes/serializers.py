@@ -76,7 +76,5 @@ class NotePartialSerializer(NoteSerializer):
             serializers.ValidationError: If the request body is empty.
         """
         if not attrs:
-            raise serializers.ValidationError(
-                "At least one field must be provided."
-            )
+            raise serializers.ValidationError("At least one field must be provided.")
         return attrs
