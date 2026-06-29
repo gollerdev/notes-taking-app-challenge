@@ -55,7 +55,7 @@ describe("NoteCard", () => {
       category: "random_thoughts",
     });
     render(<NoteCard note={note} />);
-    expect(screen.getByText("Jun 15, 2026")).toBeInTheDocument();
+    expect(screen.getByText("Jun 15")).toBeInTheDocument();
     expect(screen.getByText("Random Thoughts")).toBeInTheDocument();
   });
 
