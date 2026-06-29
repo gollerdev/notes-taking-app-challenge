@@ -1,0 +1,30 @@
+# CI override for docker-compose.yml.
+# Merges with the base file to apply test-specific configuration.
+# All credentials here are ephemeral and scoped to the CI job.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.ci.yml up --build -d
+
+services:
+  web:
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      SECRET_KEY: ci-secret-key-not-used-in-production
+      DB_NAME: notes_test
+      DB_USER: notes_user
+      DB_PASSWORD: notes_password
+      DB_HOST: db
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    environment:
+      POSTGRES_DB: notes_test
+      POSTGRES_USER: notes_user
+      POSTGRES_PASSWORD: notes_password
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "notes_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
