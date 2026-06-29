@@ -51,6 +51,8 @@ async function handleResponse<T>(response: Response): Promise<T> {
   }
   // 204 No Content (and other empty-body success responses, e.g. from DELETE)
   // have no JSON to parse; response.json() would throw on the empty body.
+  // Callers of 204-producing endpoints should declare <void> (e.g. api.delete<void>())
+  // so TypeScript reflects the actual undefined value rather than a misleading type.
   if (response.status === 204) {
     return undefined as T;
   }

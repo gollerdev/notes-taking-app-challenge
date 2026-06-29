@@ -119,7 +119,10 @@ Before implementing any component with a designed UI, fetch its Figma node with 
 - All browser-exposed env vars use the `NEXT_PUBLIC_` prefix.
 - `.env.local` is gitignored -- never committed.
 - `.env.example` is committed with documented keys.
-- Key: `NEXT_PUBLIC_API_URL=http://localhost:8000` (the base URL; `lib/api.ts` appends `/api/v1`).
+- Key: `NEXT_PUBLIC_API_URL=http://localhost:8000` (browser-facing base URL; `lib/api.ts` appends `/api/v1`).
+- Key: `INTERNAL_API_URL=http://web:8000` (container-internal URL for server-component fetches).
+
+**Server vs browser API URL:** `NEXT_PUBLIC_API_URL` resolves correctly in the browser (where `localhost:8000` is port-mapped from the host). It does NOT work inside the Next.js container — `localhost` there is the container itself. Server components that fetch data must use `INTERNAL_API_URL` (`http://web:8000`) so Docker's internal network resolves the backend service.
 
 ---
 
@@ -162,7 +165,8 @@ JWT access tokens are read through a single helper function (`getAccessToken()` 
 
 ### ESLint
 
-- Extends `next/core-web-vitals` and `plugin:@typescript-eslint/recommended`.
+- Extends `next/core-web-vitals` and `plugin:@typescript-eslint/recommended-type-checked`.
+- Type-aware linting is enabled (`parserOptions.project: ./tsconfig.json`), catching unhandled promises (`no-floating-promises`) and other type-level errors that `recommended` misses.
 - Rules: `@typescript-eslint/no-explicit-any: "error"`, `@typescript-eslint/no-unused-vars: "error"`.
 - Run: `npm run lint`
 
@@ -189,7 +193,7 @@ JWT access tokens are read through a single helper function (`getAccessToken()` 
 
 ### Coverage
 
-- **100% line coverage** is required on all testable code.
+- **100% coverage** (lines, branches, functions, statements) is required on all testable code.
 - Coverage provider: `v8`.
 - Excluded from coverage: `app/layout.tsx`, `app/page.tsx`, `app/health/page.tsx` (server-component shells), `next.config.mjs`, `tailwind.config.ts`, `postcss.config.js`, `vitest.config.ts`, `vitest.setup.ts`, `types/**` (type-only files), `**/*.test.ts`, `**/*.test.tsx`, `**/*.d.ts`.
 

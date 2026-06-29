@@ -29,6 +29,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/')\" || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     ports:
       - "8000:8000"
     volumes:
@@ -38,9 +44,13 @@ services:
   frontend:
     build: ./frontend
     environment:
+      # NEXT_PUBLIC_API_URL is browser-facing (host resolution). Use INTERNAL_API_URL
+      # for server-component fetches inside the container (resolves via Docker network).
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      INTERNAL_API_URL: ${INTERNAL_API_URL:-http://web:8000}
     depends_on:
-      - web
+      web:
+        condition: service_healthy
     ports:
       - "3000:3000"
     volumes:
