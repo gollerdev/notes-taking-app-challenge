@@ -56,7 +56,10 @@ class NoteViewSet(ModelViewSet[Note]):
         Args:
             serializer: The validated serializer instance.
         """
-        serializer.instance = NoteService.create_note(serializer.validated_data, self.request.user)  # type: ignore[arg-type]
+        serializer.instance = NoteService.create_note(
+            serializer.validated_data,
+            self.request.user,  # type: ignore[arg-type]
+        )
 
     def perform_update(self, serializer: BaseSerializer[Note]) -> None:
         """Delegate partial update to the service layer.
