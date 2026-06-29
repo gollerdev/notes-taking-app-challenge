@@ -41,7 +41,9 @@ class AuthenticationIntegrationTest(TestCase):
             {"refresh": refresh_token},
             format="json",
         )
-        self.assertEqual(logout_register_resp.status_code, status.HTTP_205_RESET_CONTENT)
+        self.assertEqual(
+            logout_register_resp.status_code, status.HTTP_205_RESET_CONTENT
+        )
 
         # Verify identity: the registered user exists and matches expectations.
         user = User.objects.get(email="integration@example.com")
