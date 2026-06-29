@@ -23,6 +23,7 @@ out/
 dist/
 .turbo/
 *.tsbuildinfo
+coverage/
 
 # Environment
 .env
