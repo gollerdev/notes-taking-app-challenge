@@ -327,7 +327,7 @@ plugins =
     mypy_drf_plugin.main
 
 [mypy.plugins.django-stubs]
-django_settings_module = "config.settings.local"
+django_settings_module = "config.settings.test"
 
 [mypy-*.migrations.*]
 ignore_errors = true
