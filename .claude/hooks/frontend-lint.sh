@@ -3,7 +3,12 @@
 # Runs prettier + eslint --fix on frontend .ts/.tsx/.js/.jsx files after Claude writes them.
 
 INPUT=$(cat)
-FILE=$(echo "$INPUT" | python -c "import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))" 2>/dev/null || echo "")
+FILE=$(echo "$INPUT" | python -c "
+import sys, json
+d = json.load(sys.stdin)
+p = d.get('tool_input', {}).get('file_path', '').replace(chr(92), '/')
+print(p)
+" 2>/dev/null || echo "")
 
 [[ -z "$FILE" ]] && exit 0
 
