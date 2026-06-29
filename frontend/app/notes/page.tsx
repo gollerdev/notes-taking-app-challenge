@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useNotes } from "@/hooks/useNotes";
-import { notesService } from "@/services/notes";
 import { CategorySidebar } from "@/components/notes/CategorySidebar";
 import { NoteGrid } from "@/components/notes/NoteGrid";
 import { NewNoteButton } from "@/components/notes/NewNoteButton";
@@ -13,9 +12,8 @@ import { NewNoteButton } from "@/components/notes/NewNoteButton";
 export default function NotesPage() {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
-  const { notes, loading, error, setNotes } = useNotes();
+  const { notes, loading, error } = useNotes();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [createError, setCreateError] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -30,20 +28,6 @@ export default function NotesPage() {
   const filtered = activeCategory
     ? notes.filter((n) => n.category === activeCategory)
     : notes;
-
-  const handleNewNote = () => {
-    setCreateError(false);
-    notesService
-      .create({
-        title: "Untitled",
-        body: "",
-        category: activeCategory ?? "random_thoughts",
-      })
-      .then((newNote) => {
-        setNotes((prev) => [newNote, ...prev]);
-      })
-      .catch(() => setCreateError(true));
-  };
 
   if (loading) {
     return (
@@ -67,10 +51,7 @@ export default function NotesPage() {
     <div className="relative min-h-screen bg-cream">
       {/* Top-right New Note button — positioned per Figma at top-right */}
       <div className="absolute right-[34px] top-[39px] flex items-center gap-3">
-        {createError && (
-          <p className="font-sans text-sm text-red-600">Failed to create note.</p>
-        )}
-        <NewNoteButton onClick={handleNewNote} />
+        <NewNoteButton />
       </div>
 
       {/* Sidebar + Content layout */}

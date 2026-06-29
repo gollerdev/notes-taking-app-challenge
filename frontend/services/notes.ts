@@ -12,4 +12,14 @@ export const notesService = {
   async create(payload: CreateNotePayload): Promise<Note> {
     return api.post<Note>("/notes/", payload);
   },
+
+  /** Fetch a single note by ID. */
+  async getById(id: string): Promise<Note> {
+    return api.get<Note>(`/notes/${id}/`);
+  },
+
+  /** Partially update a note by ID. */
+  async patch(id: string, payload: Partial<CreateNotePayload>): Promise<Note> {
+    return api.patch<Note>(`/notes/${id}/`, payload);
+  },
 };

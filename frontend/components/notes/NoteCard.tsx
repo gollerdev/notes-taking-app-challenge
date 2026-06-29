@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
   CATEGORY_COLORS,
   CATEGORY_BORDER_COLORS,
@@ -12,8 +13,9 @@ interface NoteCardProps {
   note: Note;
 }
 
-/** Renders a single note card with category-colored background per Figma node 2:39. */
+/** Renders a single clickable note card with category-colored background per Figma node 2:39. */
 export function NoteCard({ note }: NoteCardProps) {
+  const router = useRouter();
   const bgColor = CATEGORY_COLORS[note.category] ?? "bg-cream";
   const borderColor = CATEGORY_BORDER_COLORS[note.category] ?? "border-brand";
   const categoryLabel = CATEGORY_LABELS[note.category] ?? note.category;
@@ -21,7 +23,15 @@ export function NoteCard({ note }: NoteCardProps) {
 
   return (
     <div
-      className={`flex h-[246px] w-full flex-col gap-3 rounded-[11px] border-[3px] p-4 shadow-[1px_1px_2px_0px_rgba(0,0,0,0.25)] ${bgColor} ${borderColor}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => router.push(`/notes/${note.id}`)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          router.push(`/notes/${note.id}`);
+        }
+      }}
+      className={`flex h-[246px] w-full cursor-pointer flex-col gap-3 rounded-[11px] border-[3px] p-4 shadow-[1px_1px_2px_0px_rgba(0,0,0,0.25)] ${bgColor} ${borderColor}`}
     >
       <div className="flex gap-2 text-xs font-sans text-black">
         <span className="font-bold">{relativeDate}</span>
