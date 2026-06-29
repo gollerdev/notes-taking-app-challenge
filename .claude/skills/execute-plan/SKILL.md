@@ -44,6 +44,15 @@ Follow these steps exactly:
 > - Always honour the conventions in CLAUDE.md files — they override your defaults (e.g. package manager, test runner, linter, auth storage)
 > - Do not output `DONE` unless every acceptance criterion is met and tests pass
 > - `DONE` is the only keyword that signals successful completion
+>
+> Frontend visual verification (when the plan touches frontend code):
+> - Before marking any frontend acceptance criterion as met, visually verify it using the Playwright MCP tools
+> - Start the app by running `docker compose up -d` from the project root and wait for all services to be healthy
+> - Use `browser_navigate` to open `http://localhost:3000` and navigate to the relevant pages
+> - Use `browser_snapshot` to inspect the page structure and `browser_take_screenshot` to verify visual appearance
+> - Use `browser_click`, `browser_fill_form`, and other Playwright interaction tools to test user flows (form submission, navigation, error states, etc.)
+> - Check `browser_console_messages` for JavaScript errors — no errors other than missing favicon are acceptable
+> - Do NOT skip visual verification — unit tests alone are not sufficient for frontend acceptance criteria
 
 ## Rules
 - You (the controller) never touch the repo directly — only subagents do

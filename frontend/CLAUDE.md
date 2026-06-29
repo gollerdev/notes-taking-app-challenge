@@ -22,12 +22,14 @@ frontend/
     health/
       page.tsx              # Health-check page (server shell)
     (auth)/
-      login/page.tsx        # Login page (future)
-      register/page.tsx     # Register page (future)
+      layout.tsx            # Auth route-group layout (centered, cream bg)
+      login/page.tsx        # Login page
+      register/page.tsx     # Register page
     (notes)/
       page.tsx              # Notes list (future)
   components/
     ui/                     # Generic reusable UI components
+    auth/                   # Auth components (AuthForm, EmailInput, PasswordInput, SubmitButton)
     notes/                  # Note-specific components (NoteCard, NoteForm, etc.)
     HealthStatus.tsx        # Health-check client component
   context/                  # React Context providers (e.g. AuthContext)
@@ -106,6 +108,35 @@ Next.js 14 App Router. All routes in `app/`. No `pages/` directory.
 
 Tailwind CSS only. No inline styles, no CSS modules, no styled-components. If Tailwind cannot express a visual requirement, document the exception.
 
+### Design Tokens (introduced in Issue #11)
+
+All visual values from Figma are centralized as Tailwind tokens in `tailwind.config.ts`. Components use token-based utilities -- never raw hex values, font stacks, or magic numbers.
+
+**Palette tokens** (in `theme.extend.colors`):
+
+| Token     | Value     | Usage                            |
+| --------- | --------- | -------------------------------- |
+| `cream`   | `#faf1e3` | Page/card backgrounds            |
+| `brand`   | `#957139` | Borders, buttons, links, accents |
+| `heading` | `#88642a` | Heading text                     |
+
+Use: `bg-cream`, `border-brand`, `text-heading`, etc.
+
+**Font tokens** (in `theme.extend.fontFamily`):
+
+| Token   | Font        | Usage                   |
+| ------- | ----------- | ----------------------- |
+| `serif` | Inria Serif | Headings / display text |
+| `sans`  | Inter       | Body text / UI elements |
+
+Fonts are loaded via `next/font/google` in `app/fonts.ts` and exposed as CSS variables (`--font-inria-serif`, `--font-inter`) on `<body>`. Use: `font-serif`, `font-sans`.
+
+**Rules for future UI work:**
+
+- All new UI must consume these tokens -- never hardcode colors, font sizes, or font families.
+- To add new visual values, extend `tailwind.config.ts` with new tokens rather than introducing one-off values in components.
+- Error states use `text-red-600` / `border-red-600` (consistent with auth forms).
+
 ---
 
 ## Figma-first Rule
@@ -128,11 +159,9 @@ Before implementing any component with a designed UI, fetch its Figma node with 
 
 ## Token Storage
 
-JWT access tokens are read through a single helper function (`getAccessToken()` in `lib/api.ts`) so the storage mechanism can be swapped without touching call sites.
+JWT access tokens are stored **in memory only** (decided in Issue #11). Tokens are intentionally lost on page refresh -- no `localStorage`, no cookies.
 
-**Current implementation:** `localStorage` for simplicity during development.
-
-**Security trade-off:** `localStorage` is accessible to JavaScript and therefore exposed to XSS attacks. An `httpOnly` cookie approach is XSS-safe but requires same-site/CSRF handling and backend cookie support. The final storage mechanism will be decided and implemented in the Auth ticket.
+**Implementation:** A module-level variable in `lib/api.ts` holds the token. `AuthContext` calls `setAccessToken(token)` on login and `setAccessToken(null)` on logout. `getAccessToken()` returns the in-memory value, and `buildHeaders()` uses it to attach `Authorization: Bearer <token>` to outgoing requests. Call sites (services, hooks) are unaware of the storage mechanism.
 
 ---
 
@@ -150,14 +179,17 @@ JWT access tokens are read through a single helper function (`getAccessToken()` 
 
 **Per-component rendering decisions:**
 
-| Component             | Rendering | Reason                      |
-| --------------------- | --------- | --------------------------- |
-| `app/layout.tsx`      | Server    | Static shell                |
-| `app/page.tsx`        | Server    | Static content              |
-| `app/health/page.tsx` | Server    | Shell for HealthStatus      |
-| `HealthStatus`        | Client    | `useEffect` + `useState`    |
-| `NoteList` (future)   | Client    | `useEffect` + `useState`    |
-| `NoteForm` (future)   | Client    | Form state + event handlers |
+| Component             | Rendering | Reason                                |
+| --------------------- | --------- | ------------------------------------- |
+| `app/layout.tsx`      | Server    | Static shell                          |
+| `app/page.tsx`        | Client    | `useAuth` + `useEffect` redirect gate |
+| `app/health/page.tsx` | Server    | Shell for HealthStatus                |
+| `app/(auth)/layout`   | Server    | Static centered layout                |
+| `app/(auth)/login`    | Client    | Form state + auth context             |
+| `app/(auth)/register` | Client    | Form state + auth context             |
+| `HealthStatus`        | Client    | `useEffect` + `useState`              |
+| `NoteList` (future)   | Client    | `useEffect` + `useState`              |
+| `NoteForm` (future)   | Client    | Form state + event handlers           |
 
 ---
 

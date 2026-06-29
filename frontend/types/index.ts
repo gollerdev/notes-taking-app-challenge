@@ -26,3 +26,15 @@ export interface User {
 export interface HealthCheckResponse {
   status: string;
 }
+
+/** Payload for login and register requests. */
+export interface AuthCredentials {
+  email: string;
+  password: string;
+}
+
+/** Token pair returned by login and register endpoints. */
+export interface AuthTokens {
+  access: string;
+  refresh: string;
+}
