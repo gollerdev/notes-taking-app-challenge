@@ -57,7 +57,7 @@ describe("useNotes", () => {
     expect(result.current.notes).toEqual([]);
   });
 
-  it("sets loading to false even when getAll rejects", async () => {
+  it("sets error to true and loading to false when getAll rejects", async () => {
     vi.mocked(notesService.getAll).mockRejectedValue(new Error("Network error"));
 
     const { result } = renderHook(() => useNotes());
@@ -66,6 +66,19 @@ describe("useNotes", () => {
       expect(result.current.loading).toBe(false);
     });
 
+    expect(result.current.error).toBe(true);
     expect(result.current.notes).toEqual([]);
+  });
+
+  it("has error false on successful fetch", async () => {
+    vi.mocked(notesService.getAll).mockResolvedValue([mockNote()]);
+
+    const { result } = renderHook(() => useNotes());
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(result.current.error).toBe(false);
   });
 });

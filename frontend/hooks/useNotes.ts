@@ -11,20 +11,20 @@ import type { Note } from "@/types";
 export function useNotes(): {
   notes: Note[];
   loading: boolean;
+  error: boolean;
   setNotes: React.Dispatch<React.SetStateAction<Note[]>>;
 } {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     notesService
       .getAll()
       .then(setNotes)
-      .catch(() => {
-        // Silently swallow fetch errors — notes stays empty.
-      })
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
 
-  return { notes, loading, setNotes };
+  return { notes, loading, error, setNotes };
 }

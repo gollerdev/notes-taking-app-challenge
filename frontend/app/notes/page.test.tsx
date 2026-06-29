@@ -296,4 +296,35 @@ describe("NotesPage", () => {
 
     expect(screen.getByText("Loading notes...")).toBeInTheDocument();
   });
+
+  it("shows error message when notes fail to load", async () => {
+    vi.mocked(useAuth).mockReturnValue(authValue);
+    vi.mocked(notesService.getAll).mockRejectedValue(new Error("Network"));
+
+    render(<NotesPage />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Failed to load notes. Please try again later."),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("shows error message when creating a note fails", async () => {
+    vi.mocked(useAuth).mockReturnValue(authValue);
+    vi.mocked(notesService.getAll).mockResolvedValue([]);
+    vi.mocked(notesService.create).mockRejectedValue(new Error("Server error"));
+
+    render(<NotesPage />);
+
+    await waitFor(() => {
+      expect(screen.queryByText("Loading notes...")).not.toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText("New Note"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Failed to create note.")).toBeInTheDocument();
+    });
+  });
 });

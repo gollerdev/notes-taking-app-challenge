@@ -3,7 +3,7 @@
  *
  * - Same calendar day as now -> "today"
  * - Previous calendar day   -> "yesterday"
- * - Older                   -> locale date string (e.g. "Jun 15, 2026")
+ * - Older                   -> locale date string without year (e.g. "Jun 15")
  *
  * Uses native Date — no external date library.
  */

@@ -13,8 +13,9 @@ import { NewNoteButton } from "@/components/notes/NewNoteButton";
 export default function NotesPage() {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
-  const { notes, loading, setNotes } = useNotes();
+  const { notes, loading, error, setNotes } = useNotes();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [createError, setCreateError] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -31,7 +32,8 @@ export default function NotesPage() {
     : notes;
 
   const handleNewNote = () => {
-    void notesService
+    setCreateError(false);
+    notesService
       .create({
         title: "Untitled",
         body: "",
@@ -39,7 +41,8 @@ export default function NotesPage() {
       })
       .then((newNote) => {
         setNotes((prev) => [newNote, ...prev]);
-      });
+      })
+      .catch(() => setCreateError(true));
   };
 
   if (loading) {
@@ -50,10 +53,23 @@ export default function NotesPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-cream">
+        <p className="font-sans text-lg text-red-600">
+          Failed to load notes. Please try again later.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-screen bg-cream">
       {/* Top-right New Note button — positioned per Figma at top-right */}
-      <div className="absolute right-[34px] top-[39px]">
+      <div className="absolute right-[34px] top-[39px] flex items-center gap-3">
+        {createError && (
+          <p className="font-sans text-sm text-red-600">Failed to create note.</p>
+        )}
         <NewNoteButton onClick={handleNewNote} />
       </div>
 
