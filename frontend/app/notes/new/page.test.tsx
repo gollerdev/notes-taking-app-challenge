@@ -59,7 +59,7 @@ describe("NewNotePage", () => {
 
     await waitFor(() => {
       expect(notesService.create).toHaveBeenCalledWith({
-        title: "Untitled",
+        title: "",
         body: "",
         category: "personal",
       });

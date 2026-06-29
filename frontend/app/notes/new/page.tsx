@@ -17,7 +17,7 @@ export default function NewNotePage() {
     }
 
     void notesService
-      .create({ title: "Untitled", body: "", category: "personal" })
+      .create({ title: "", body: "", category: "personal" })
       .then((newNote) => {
         router.replace(`/notes/${newNote.id}`);
       });

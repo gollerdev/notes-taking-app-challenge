@@ -35,7 +35,7 @@ export function CategoryDropdown({ value, onChange }: CategoryDropdownProps) {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex h-[39px] w-full cursor-pointer items-center gap-2 rounded-[6px] border border-brand px-[15px] py-[7px]"
+        className="flex h-[39px] w-full cursor-pointer items-center gap-2 rounded-[6px] border border-brand px-[15px] py-[7px] text-brand"
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >
@@ -52,7 +52,7 @@ export function CategoryDropdown({ value, onChange }: CategoryDropdownProps) {
         >
           <path
             d="M6 9L12 15L18 9"
-            stroke="#957139"
+            stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"

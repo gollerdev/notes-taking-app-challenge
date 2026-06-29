@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { notesService } from "@/services/notes";
 import { CATEGORY_COLORS, CATEGORY_BORDER_COLORS } from "@/lib/categoryColors";
@@ -21,6 +21,14 @@ export function NoteEditor({ note }: NoteEditorProps) {
   const [category, setCategory] = useState(note.category);
   const [lastEdited, setLastEdited] = useState(note.updated_at);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
 
   const save = useCallback(
     (patch: Partial<CreateNotePayload>) => {
@@ -81,8 +89,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
         />
       </div>
       <div
-        className={`mx-[37px] mt-[11px] flex flex-col gap-6 rounded-[11px] border-[3px] px-16 pb-16 pt-[39px] shadow-[1px_1px_2px_0px_rgba(0,0,0,0.25)] ${bgColor} ${borderColor}`}
-        style={{ minHeight: "700px" }}
+        className={`mx-[37px] mt-[11px] flex min-h-[700px] flex-col gap-6 rounded-[11px] border-[3px] px-16 pb-16 pt-[39px] shadow-[1px_1px_2px_0px_rgba(0,0,0,0.25)] ${bgColor} ${borderColor}`}
       >
         <TitleInput value={title} onChange={handleTitleChange} />
         <BodyTextarea value={body} onChange={handleBodyChange} />
