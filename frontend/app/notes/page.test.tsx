@@ -146,9 +146,7 @@ describe("NotesPage", () => {
 
     // Select a category first, then click All Categories to clear filter
     const schoolButtons = screen.getAllByText("School");
-    const sidebarSchool = schoolButtons.find(
-      (el) => el.closest("button") !== null,
-    );
+    const sidebarSchool = schoolButtons.find((el) => el.closest("button") !== null);
     fireEvent.click(sidebarSchool!);
 
     // Only school note visible now
@@ -273,9 +271,7 @@ describe("NotesPage", () => {
 
     // Select Personal, then go back to All Categories
     const personalButtons = screen.getAllByText("Personal");
-    const sidebarPersonal = personalButtons.find(
-      (el) => el.closest("button") !== null,
-    );
+    const sidebarPersonal = personalButtons.find((el) => el.closest("button") !== null);
     fireEvent.click(sidebarPersonal!);
     fireEvent.click(screen.getByText("All Categories"));
 
