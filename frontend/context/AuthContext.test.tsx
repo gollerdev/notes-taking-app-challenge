@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, act } from "@testing-library/react";
-import { AuthProvider, useAuth } from "./AuthContext";
+import { AuthProvider, useAuth, getStoredTokens } from "./AuthContext";
 import { mockAuthTokens } from "@/test-utils/factories";
 
 vi.mock("@/lib/api", () => ({
@@ -183,14 +183,9 @@ describe("AuthContext", () => {
   it("getStoredTokens returns null tokens when window is undefined (SSR)", () => {
     vi.stubGlobal("window", undefined);
     try {
-      render(
-        <AuthProvider>
-          <TestConsumer />
-        </AuthProvider>,
-      );
-      expect(screen.getByTestId("authenticated").textContent).toBe("false");
-      expect(screen.getByTestId("access").textContent).toBe("null");
-      expect(screen.getByTestId("refresh").textContent).toBe("null");
+      const result = getStoredTokens();
+      expect(result.access).toBeNull();
+      expect(result.refresh).toBeNull();
     } finally {
       vi.unstubAllGlobals();
     }

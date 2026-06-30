@@ -13,7 +13,7 @@ import type { AuthTokens } from "@/types";
 
 const REFRESH_TOKEN_KEY = "refresh_token";
 
-function getStoredTokens(): { access: string | null; refresh: string | null } {
+export function getStoredTokens(): { access: string | null; refresh: string | null } {
   if (typeof window === "undefined") {
     return { access: null, refresh: null };
   }
