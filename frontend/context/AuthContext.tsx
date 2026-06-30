@@ -4,11 +4,24 @@ import {
   createContext,
   useContext,
   useState,
+  useEffect,
   useCallback,
   type ReactNode,
 } from "react";
 import { setAccessToken } from "@/lib/api";
 import type { AuthTokens } from "@/types";
+
+const REFRESH_TOKEN_KEY = "refresh_token";
+
+export function getStoredTokens(): { access: string | null; refresh: string | null } {
+  if (typeof window === "undefined") {
+    return { access: null, refresh: null };
+  }
+  return {
+    access: localStorage.getItem("access_token"),
+    refresh: localStorage.getItem(REFRESH_TOKEN_KEY),
+  };
+}
 
 interface AuthState {
   access: string | null;
@@ -20,21 +33,27 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-/** Provides in-memory auth state. Tokens are lost on refresh by design. */
+/** Provides auth state persisted to localStorage so it survives page reloads. */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [tokens, setTokens] = useState<{
-    access: string | null;
-    refresh: string | null;
-  }>({ access: null, refresh: null });
+  const [tokens, setTokens] = useState(getStoredTokens);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("access_token");
+    if (stored !== null) {
+      setAccessToken(stored);
+    }
+  }, []);
 
   const login = useCallback((newTokens: AuthTokens) => {
     setTokens({ access: newTokens.access, refresh: newTokens.refresh });
     setAccessToken(newTokens.access);
+    localStorage.setItem(REFRESH_TOKEN_KEY, newTokens.refresh);
   }, []);
 
   const logout = useCallback(() => {
     setTokens({ access: null, refresh: null });
     setAccessToken(null);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
   }, []);
 
   const value: AuthState = {
