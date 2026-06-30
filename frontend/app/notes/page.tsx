@@ -10,18 +10,20 @@ import { NewNoteButton } from "@/components/notes/NewNoteButton";
 
 /** Notes main screen — protected route at /notes. */
 export default function NotesPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isHydrated } = useAuth();
   const router = useRouter();
   const { notes, loading, error } = useNotes();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!isHydrated) return;
+
     if (!isAuthenticated) {
       router.push("/login");
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isHydrated, router]);
 
-  if (!isAuthenticated) {
+  if (!isHydrated || !isAuthenticated) {
     return null;
   }
 

@@ -2,6 +2,7 @@ const BASE_URL =
   (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000") + "/api/v1";
 
 const ACCESS_TOKEN_KEY = "access_token";
+const REFRESH_TOKEN_KEY = "refresh_token";
 
 let accessToken: string | null = null;
 
@@ -71,39 +72,131 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+// --- 401 interceptor: refresh token logic ---
+
+/** Mutex for token refresh to prevent concurrent refresh attempts. */
+let refreshPromise: Promise<string> | null = null;
+
+/** Attempts to refresh the access token using the stored refresh token.
+ *  Uses raw fetch (not the api wrapper) to avoid recursive 401 interception.
+ *  Only one refresh attempt is in-flight at a time — concurrent callers
+ *  share the same promise. */
+async function attemptTokenRefresh(): Promise<string> {
+  if (refreshPromise !== null) {
+    return refreshPromise;
+  }
+
+  refreshPromise = (async () => {
+    const refreshToken =
+      typeof window !== "undefined" ? localStorage.getItem(REFRESH_TOKEN_KEY) : null;
+
+    if (!refreshToken) {
+      throw new Error("No refresh token available");
+    }
+
+    const response = await fetch(`${BASE_URL}/auth/refresh/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh: refreshToken }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Token refresh failed");
+    }
+
+    const data = (await response.json()) as { access: string };
+    return data.access;
+  })();
+
+  try {
+    const newToken = await refreshPromise;
+    return newToken;
+  } finally {
+    refreshPromise = null;
+  }
+}
+
+/** Clears the session (tokens from memory and localStorage) and redirects to /login. */
+function clearSessionAndRedirect(): void {
+  accessToken = null;
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    window.location.href = "/login";
+  }
+}
+
+/** Wraps an API call with 401 interception: on 401, attempts a single token
+ *  refresh and retries the original request exactly once. On refresh failure,
+ *  clears the session and redirects to /login. */
+async function withRefreshRetry<T>(requestFn: () => Promise<Response>): Promise<T> {
+  const response = await requestFn();
+
+  if (response.status !== 401) {
+    return handleResponse<T>(response);
+  }
+
+  // 401 received — attempt token refresh
+  try {
+    const newToken = await attemptTokenRefresh();
+    setAccessToken(newToken);
+  } catch {
+    clearSessionAndRedirect();
+    // Re-throw the original 401 error so callers can handle it
+    let body: unknown;
+    try {
+      body = await response.clone().json();
+    } catch {
+      body = await response.clone().text();
+    }
+    throw new ApiError(401, body);
+  }
+
+  // Retry the original request with the new token
+  const retryResponse = await requestFn();
+  return handleResponse<T>(retryResponse);
+}
+
+// Expose for testing
+export { clearSessionAndRedirect as _clearSessionAndRedirect };
+
 /** Central API wrapper. All HTTP calls to the backend go through here. */
 export const api = {
   async get<T>(path: string): Promise<T> {
-    const response = await fetch(`${BASE_URL}${path}`, {
-      method: "GET",
-      headers: buildHeaders(),
-    });
-    return handleResponse<T>(response);
+    return withRefreshRetry<T>(() =>
+      fetch(`${BASE_URL}${path}`, {
+        method: "GET",
+        headers: buildHeaders(),
+      }),
+    );
   },
 
   async post<T>(path: string, data?: unknown): Promise<T> {
-    const response = await fetch(`${BASE_URL}${path}`, {
-      method: "POST",
-      headers: buildHeaders(),
-      body: data !== undefined ? JSON.stringify(data) : undefined,
-    });
-    return handleResponse<T>(response);
+    return withRefreshRetry<T>(() =>
+      fetch(`${BASE_URL}${path}`, {
+        method: "POST",
+        headers: buildHeaders(),
+        body: data !== undefined ? JSON.stringify(data) : undefined,
+      }),
+    );
   },
 
   async patch<T>(path: string, data?: unknown): Promise<T> {
-    const response = await fetch(`${BASE_URL}${path}`, {
-      method: "PATCH",
-      headers: buildHeaders(),
-      body: data !== undefined ? JSON.stringify(data) : undefined,
-    });
-    return handleResponse<T>(response);
+    return withRefreshRetry<T>(() =>
+      fetch(`${BASE_URL}${path}`, {
+        method: "PATCH",
+        headers: buildHeaders(),
+        body: data !== undefined ? JSON.stringify(data) : undefined,
+      }),
+    );
   },
 
   async delete<T>(path: string): Promise<T> {
-    const response = await fetch(`${BASE_URL}${path}`, {
-      method: "DELETE",
-      headers: buildHeaders(),
-    });
-    return handleResponse<T>(response);
+    return withRefreshRetry<T>(() =>
+      fetch(`${BASE_URL}${path}`, {
+        method: "DELETE",
+        headers: buildHeaders(),
+      }),
+    );
   },
 };

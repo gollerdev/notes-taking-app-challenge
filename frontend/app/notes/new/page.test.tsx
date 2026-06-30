@@ -26,10 +26,12 @@ vi.mock("@/services/notes", () => ({
 
 const authValue = {
   isAuthenticated: true,
+  isHydrated: true,
   access: "token",
   refresh: "refresh",
   login: vi.fn(),
   logout: vi.fn(),
+  clearSession: vi.fn(),
 };
 
 describe("NewNotePage", () => {
@@ -37,13 +39,27 @@ describe("NewNotePage", () => {
     vi.clearAllMocks();
   });
 
-  it("redirects to /login when unauthenticated", () => {
+  it("renders nothing while isHydrated is false", () => {
+    vi.mocked(useAuth).mockReturnValue({
+      ...authValue,
+      isHydrated: false,
+    });
+
+    const { container } = render(<NewNotePage />);
+
+    expect(container.innerHTML).toBe("");
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it("redirects to /login when unauthenticated and hydrated", () => {
     vi.mocked(useAuth).mockReturnValue({
       isAuthenticated: false,
+      isHydrated: true,
       access: null,
       refresh: null,
       login: vi.fn(),
       logout: vi.fn(),
+      clearSession: vi.fn(),
     });
 
     render(<NewNotePage />);

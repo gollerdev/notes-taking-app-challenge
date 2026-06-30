@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { authService } from "./auth";
+import { authService, refreshAccessToken } from "./auth";
 import { mockAuthPayload, mockAuthTokens } from "@/test-utils/factories";
 
 vi.mock("@/lib/api", () => ({
@@ -66,5 +66,41 @@ describe("authService", () => {
       expect(api.patch).not.toHaveBeenCalled();
       expect(api.delete).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe("refreshAccessToken", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("calls api.post with /auth/refresh/ and the refresh token, returns new access token", async () => {
+    const newAccess = "new-access-token-xyz";
+    vi.mocked(api.post).mockResolvedValue({ access: newAccess });
+
+    const result = await refreshAccessToken("my-refresh-token");
+
+    expect(result).toBe(newAccess);
+    expect(api.post).toHaveBeenCalledOnce();
+    expect(api.post).toHaveBeenCalledWith("/auth/refresh/", {
+      refresh: "my-refresh-token",
+    });
+  });
+
+  it("throws when the refresh endpoint returns an error", async () => {
+    vi.mocked(api.post).mockRejectedValue(new Error("Token expired"));
+
+    await expect(refreshAccessToken("expired-token")).rejects.toThrow("Token expired");
+    expect(api.post).toHaveBeenCalledOnce();
+  });
+
+  it("does not call any other api method", async () => {
+    vi.mocked(api.post).mockResolvedValue({ access: "token" });
+
+    await refreshAccessToken("refresh-token");
+
+    expect(api.get).not.toHaveBeenCalled();
+    expect(api.patch).not.toHaveBeenCalled();
+    expect(api.delete).not.toHaveBeenCalled();
   });
 });
