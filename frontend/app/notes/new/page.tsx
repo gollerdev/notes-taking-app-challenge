@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { notesService } from "@/services/notes";
@@ -9,12 +9,20 @@ import { notesService } from "@/services/notes";
 export default function NewNotePage() {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
+  // Guards against React StrictMode running the effect twice in dev, which
+  // would otherwise create two notes per visit.
+  const hasCreated = useRef(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
       router.push("/login");
       return;
     }
+
+    if (hasCreated.current) {
+      return;
+    }
+    hasCreated.current = true;
 
     void notesService
       .create({ title: "Untitled", body: "", category: "personal" })

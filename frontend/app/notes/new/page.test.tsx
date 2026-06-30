@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import NewNotePage from "./page";
 import { useAuth } from "@/context/AuthContext";
 import { notesService } from "@/services/notes";
@@ -76,6 +76,25 @@ describe("NewNotePage", () => {
     await waitFor(() => {
       expect(mockReplace).toHaveBeenCalledWith("/notes/created-note-id");
     });
+  });
+
+  it("creates the note only once even if the effect re-runs", async () => {
+    const newNote = mockNote({ id: "once-note-id" });
+    vi.mocked(useAuth).mockReturnValue(authValue);
+    vi.mocked(notesService.create).mockResolvedValue(newNote);
+
+    const { rerender } = render(<NewNotePage />);
+
+    await waitFor(() => {
+      expect(notesService.create).toHaveBeenCalledTimes(1);
+    });
+
+    // A re-render that re-runs the effect must not create a second note.
+    await act(async () => {
+      rerender(<NewNotePage />);
+    });
+
+    expect(notesService.create).toHaveBeenCalledTimes(1);
   });
 
   it('shows "Creating note..." loading state', () => {
