@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { notesService } from "@/services/notes";
 
 const DEFAULT_CATEGORY = "personal";
 
-/** Transient page: creates a blank note and redirects to its editor. */
-export default function NewNotePage() {
+/** Inner component that reads search params and creates the note. */
+function NewNoteContent() {
   const { isAuthenticated, isHydrated } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -45,5 +45,14 @@ export default function NewNotePage() {
     <div className="flex min-h-screen items-center justify-center bg-cream">
       <p className="font-sans text-lg text-heading">Creating note...</p>
     </div>
+  );
+}
+
+/** Transient page: creates a blank note and redirects to its editor. */
+export default function NewNotePage() {
+  return (
+    <Suspense>
+      <NewNoteContent />
+    </Suspense>
   );
 }
