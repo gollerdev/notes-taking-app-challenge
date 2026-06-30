@@ -29,8 +29,13 @@ REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = (  # type: ignore[name-defined,unus
     "rest_framework.renderers.JSONRenderer",
 )
 
+# Static files — collectstatic writes here; Caddy serves /static/ from this path.
+STATIC_ROOT = BASE_DIR / "staticfiles"  # noqa: F405
+
 # Security hardening.
-SECURE_SSL_REDIRECT = True
+# SSL redirect is handled by Caddy — Django must not redirect internally,
+# otherwise healthchecks (plain HTTP on localhost:8000) would fail.
+SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SECURE_HSTS_SECONDS = 31536000
