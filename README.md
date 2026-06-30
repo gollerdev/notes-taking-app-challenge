@@ -135,6 +135,17 @@ The execution half of the workflow is a **"Ralph loop"**: run the same agent ove
 
 ---
 
+## Scope decisions
+
+The product demo video is the authoritative source for required functionality. Two features that might be expected in a notes app were **intentionally omitted** because they are not shown in the video:
+
+- **Logout** — The video does not demonstrate a logout flow. The backend supports token blacklisting (`POST /api/v1/auth/logout/`) and the frontend has a `logout()` function wired into `AuthContext`, but no UI button was added since the feature is not part of the demonstrated scope.
+- **Note deletion** — The video does not show deleting a note. The backend blocks `DELETE` requests on the notes endpoint, and no delete UI exists. Notes can only be created and edited.
+
+With more time beyond the demonstrated requirements, I would add: a logout button in the sidebar, note deletion with a confirmation dialog, and Playwright E2E tests committed as a repeatable test suite (currently used interactively during Ralph loops but not persisted).
+
+---
+
 ## Running the app
 
 Everything runs through Docker Compose from the project root:
