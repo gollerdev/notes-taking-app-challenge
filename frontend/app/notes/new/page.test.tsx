@@ -90,7 +90,7 @@ describe("NewNotePage", () => {
     });
 
     // A re-render that re-runs the effect must not create a second note.
-    await act(async () => {
+    act(() => {
       rerender(<NewNotePage />);
     });
 
