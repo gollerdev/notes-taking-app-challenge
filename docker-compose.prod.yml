@@ -1,9 +1,10 @@
-# Production compose: all services behind Caddy reverse proxy with auto-TLS.
+# Production-style compose: builds the slim multi-stage targets (no bind
+# mounts, no hot reload). Use this to validate the smaller images:
 #
-# Usage:
-#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+#   docker compose -f docker-compose.prod.yml up --build
 #
-# Required: .env.production (see .env.production.example)
+# Image sizes can be compared with:
+#   docker images | grep notes-taking-app-challenge
 
 services:
   db:
@@ -19,6 +20,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    ports:
+      - "5433:5432"
 
   web:
     image: notes-web:prod
@@ -26,12 +29,9 @@ services:
       context: ./backend
       target: prod
     env_file:
-      - ./.env.production
+      - ./.env
     environment:
       DB_HOST: db
-      DJANGO_SETTINGS_MODULE: config.settings.production
-    volumes:
-      - static_files:/app/staticfiles
     depends_on:
       db:
         condition: service_healthy
@@ -41,6 +41,8 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+    ports:
+      - "8000:8000"
 
   frontend:
     image: notes-frontend:prod
@@ -48,33 +50,16 @@ services:
       context: ./frontend
       target: runner
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://localhost}
+        # Baked into the client bundle at build time (browser-facing URL).
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
     environment:
+      # Server-component fetches resolve the backend over the compose network.
       INTERNAL_API_URL: ${INTERNAL_API_URL:-http://web:8000}
     depends_on:
       web:
         condition: service_healthy
-
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    environment:
-      DOMAIN: ${DOMAIN:-localhost}
     ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    volumes:
-      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-      - static_files:/srv/static:ro
-    depends_on:
-      - web
-      - frontend
+      - "3000:3000"
 
 volumes:
   postgres_data_prod:
-  caddy_data:
-  caddy_config:
-  static_files:

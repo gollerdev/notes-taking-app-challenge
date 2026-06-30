@@ -56,7 +56,7 @@ COPY . .
 
 EXPOSE 8000
 
-# Collect static files, run migrations, then serve via gunicorn.
-# DJANGO_SETTINGS_MODULE defaults to config.settings.local (set in config/wsgi.py);
-# override via env for a real deployment (e.g. config.settings.production).
-CMD ["sh", "-c", "python manage.py collectstatic --noinput && python manage.py migrate && gunicorn config.wsgi --bind 0.0.0.0:8000 --workers 3"]
+# Run migrations, then serve via gunicorn. DJANGO_SETTINGS_MODULE defaults to
+# config.settings.local (set in config/wsgi.py); override via env for a real
+# deployment (e.g. config.settings.production behind a TLS-terminating proxy).
+CMD ["sh", "-c", "python manage.py migrate && gunicorn config.wsgi --bind 0.0.0.0:8000 --workers 3"]
