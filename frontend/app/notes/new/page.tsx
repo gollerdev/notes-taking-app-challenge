@@ -7,13 +7,15 @@ import { notesService } from "@/services/notes";
 
 /** Transient page: creates a blank note and redirects to its editor. */
 export default function NewNotePage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isHydrated } = useAuth();
   const router = useRouter();
   // Guards against React StrictMode running the effect twice in dev, which
   // would otherwise create two notes per visit.
   const hasCreated = useRef(false);
 
   useEffect(() => {
+    if (!isHydrated) return;
+
     if (!isAuthenticated) {
       router.push("/login");
       return;
@@ -29,9 +31,9 @@ export default function NewNotePage() {
       .then((newNote) => {
         router.replace(`/notes/${newNote.id}`);
       });
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isHydrated, router]);
 
-  if (!isAuthenticated) {
+  if (!isHydrated || !isAuthenticated) {
     return null;
   }
 

@@ -48,6 +48,9 @@ services:
       # for server-component fetches inside the container (resolves via Docker network).
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
       INTERNAL_API_URL: ${INTERNAL_API_URL:-http://web:8000}
+      # Enable filesystem polling so Next.js Fast Refresh detects edits across the
+      # Windows -> Linux bind mount (inotify events don't propagate there).
+      WATCHPACK_POLLING: "true"
     depends_on:
       web:
         condition: service_healthy

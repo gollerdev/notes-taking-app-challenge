@@ -9,13 +9,15 @@ import type { Note } from "@/types";
 
 /** Editor shell page — fetches note by ID and renders NoteEditor. Protected route. */
 export default function NoteEditorPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isHydrated } = useAuth();
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const [note, setNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isHydrated) return;
+
     if (!isAuthenticated) {
       router.push("/login");
       return;
@@ -28,9 +30,9 @@ export default function NoteEditorPage() {
         // note stays null, which triggers the "not found" state
       })
       .finally(() => setLoading(false));
-  }, [isAuthenticated, router, params.id]);
+  }, [isAuthenticated, isHydrated, router, params.id]);
 
-  if (!isAuthenticated) {
+  if (!isHydrated || !isAuthenticated) {
     return null;
   }
 

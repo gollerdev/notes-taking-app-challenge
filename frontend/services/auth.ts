@@ -13,3 +13,12 @@ export const authService = {
     return api.post<AuthTokens>("/auth/login/", payload);
   },
 };
+
+/** Refresh the access token using a valid refresh token.
+ *  Returns the new access token on success, throws on failure. */
+export async function refreshAccessToken(refreshToken: string): Promise<string> {
+  const result = await api.post<{ access: string }>("/auth/refresh/", {
+    refresh: refreshToken,
+  });
+  return result.access;
+}
