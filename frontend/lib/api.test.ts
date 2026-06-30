@@ -313,6 +313,49 @@ describe("api", () => {
       });
     });
 
+    it("falls back to text body when 401 response clone json parse fails", async () => {
+      localStorage.setItem("refresh_token", "expired-refresh");
+      setAccessToken("expired-access");
+
+      const originalLocation = window.location;
+      Object.defineProperty(window, "location", {
+        writable: true,
+        value: { ...originalLocation, href: "/" },
+      });
+
+      // 401 response whose body is not valid JSON
+      const bad401 = {
+        ok: false,
+        status: 401,
+        json: () => Promise.reject(new Error("invalid json")),
+        text: () => Promise.resolve("Unauthorized plain text"),
+        clone() {
+          return bad401;
+        },
+      } as unknown as Response;
+
+      mockFetch
+        .mockResolvedValueOnce(bad401)
+        .mockResolvedValueOnce(jsonResponse({ detail: "Token is invalid" }, 401));
+
+      let caughtError: unknown;
+      try {
+        await api.get("/notes/");
+      } catch (error) {
+        caughtError = error;
+      }
+
+      expect(caughtError).toBeInstanceOf(ApiError);
+      const apiError = caughtError as ApiError;
+      expect(apiError.status).toBe(401);
+      expect(apiError.body).toBe("Unauthorized plain text");
+
+      Object.defineProperty(window, "location", {
+        writable: true,
+        value: originalLocation,
+      });
+    });
+
     it("clears session and redirects when no refresh token exists", async () => {
       // No refresh token in localStorage
       setAccessToken("expired-access");
@@ -334,6 +377,18 @@ describe("api", () => {
         writable: true,
         value: originalLocation,
       });
+    });
+
+    it("treats window-undefined as no refresh token (SSR path)", async () => {
+      setAccessToken("expired-access");
+
+      vi.stubGlobal("window", undefined);
+
+      mockFetch.mockResolvedValueOnce(jsonResponse({ detail: "Unauthorized" }, 401));
+
+      await expect(api.get("/notes/")).rejects.toThrow(ApiError);
+
+      vi.unstubAllGlobals();
     });
 
     it("makes only one refresh call for concurrent 401s", async () => {
