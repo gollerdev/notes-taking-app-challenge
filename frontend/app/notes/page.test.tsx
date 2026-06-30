@@ -176,7 +176,7 @@ describe("NotesPage", () => {
     expect(screen.getByText("School Note")).toBeInTheDocument();
   });
 
-  it("NewNoteButton navigates to /notes/new when clicked", async () => {
+  it("NewNoteButton navigates to /notes/new without category when All Categories is active", async () => {
     vi.mocked(useAuth).mockReturnValue(authValue);
     vi.mocked(notesService.getAll).mockResolvedValue([]);
 
@@ -188,6 +188,33 @@ describe("NotesPage", () => {
 
     fireEvent.click(screen.getByText("New Note"));
     expect(mockPush).toHaveBeenCalledWith("/notes/new");
+  });
+
+  it("NewNoteButton navigates with category param when a category is selected", async () => {
+    const notes = [
+      mockNote({
+        title: "School Note",
+        category: "school",
+        created_at: new Date().toISOString(),
+      }),
+    ];
+    vi.mocked(useAuth).mockReturnValue(authValue);
+    vi.mocked(notesService.getAll).mockResolvedValue(notes);
+
+    render(<NotesPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("School Note")).toBeInTheDocument();
+    });
+
+    // Select the "School" category
+    const schoolButtons = screen.getAllByText("School");
+    const sidebarSchool = schoolButtons.find((el) => el.closest("button") !== null);
+    fireEvent.click(sidebarSchool!);
+
+    // Now click New Note — should include category
+    fireEvent.click(screen.getByText("New Note"));
+    expect(mockPush).toHaveBeenCalledWith("/notes/new?category=school");
   });
 
   it("clicking a NoteCard navigates to /notes/[id]", async () => {
