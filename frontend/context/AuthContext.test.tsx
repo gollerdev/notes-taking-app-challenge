@@ -180,6 +180,22 @@ describe("AuthContext", () => {
     expect(localStorage.getItem("refresh_token")).toBe("test-refresh");
   });
 
+  it("getStoredTokens returns null tokens when window is undefined (SSR)", () => {
+    vi.stubGlobal("window", undefined);
+    try {
+      render(
+        <AuthProvider>
+          <TestConsumer />
+        </AuthProvider>,
+      );
+      expect(screen.getByTestId("authenticated").textContent).toBe("false");
+      expect(screen.getByTestId("access").textContent).toBe("null");
+      expect(screen.getByTestId("refresh").textContent).toBe("null");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("logout removes refresh token from localStorage", () => {
     localStorage.setItem("refresh_token", "stored-refresh");
 

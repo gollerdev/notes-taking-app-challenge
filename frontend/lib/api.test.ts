@@ -187,6 +187,25 @@ describe("api", () => {
     });
   });
 
+  describe("SSR (window undefined)", () => {
+    it("setAccessToken skips localStorage when window is undefined", () => {
+      vi.stubGlobal("window", undefined);
+      setAccessToken("ssr-token");
+      vi.unstubAllGlobals();
+      expect(localStorage.getItem("access_token")).toBeNull();
+    });
+
+    it("omits Authorization header when window is undefined and no in-memory token", async () => {
+      vi.stubGlobal("window", undefined);
+      mockFetch.mockResolvedValue(jsonResponse({ ok: true }));
+      await api.get("/notes/");
+      vi.unstubAllGlobals();
+      const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+      const headers = options.headers as Record<string, string>;
+      expect(headers["Authorization"]).toBeUndefined();
+    });
+  });
+
   describe("environment-dependent behavior", () => {
     const originalApiUrl = process.env.NEXT_PUBLIC_API_URL;
 
