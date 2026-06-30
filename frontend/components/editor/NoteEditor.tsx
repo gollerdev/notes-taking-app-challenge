@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { notesService } from "@/services/notes";
 import { CATEGORY_COLORS, CATEGORY_BORDER_COLORS } from "@/lib/categoryColors";
 import { EditorHeader } from "./EditorHeader";
+import { LastEditedStamp } from "./LastEditedStamp";
 import { TitleInput } from "./TitleInput";
 import { BodyTextarea } from "./BodyTextarea";
 import type { Note, CreateNotePayload } from "@/types";
@@ -83,7 +84,6 @@ export function NoteEditor({ note }: NoteEditorProps) {
       <div className="px-[37px] pt-[33px]">
         <EditorHeader
           category={category}
-          lastEdited={lastEdited}
           onCategoryChange={handleCategoryChange}
           onClose={handleClose}
         />
@@ -91,6 +91,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
       <div
         className={`mx-[37px] mt-[11px] flex min-h-[700px] flex-col gap-6 rounded-[11px] border-[3px] px-16 pb-16 pt-[39px] shadow-[1px_1px_2px_0px_rgba(0,0,0,0.25)] ${bgColor} ${borderColor}`}
       >
+        <LastEditedStamp updatedAt={lastEdited} />
         <TitleInput value={title} onChange={handleTitleChange} />
         <BodyTextarea value={body} onChange={handleBodyChange} />
       </div>
