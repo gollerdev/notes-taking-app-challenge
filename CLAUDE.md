@@ -18,7 +18,6 @@ Notes-taking app challenge for Turbo AI. Built with Django REST (backend) and Ne
 ├── docs/
 │   ├── plans/        # Plan files — one per ticket, input to /execute-plan
 │   ├── ralph-loops/  # Loop logs — one per ticket, written after execution
-│   └── adr/          # Architectural decision records (2–3 max)
 ├── .claude/
 │   ├── skills/       # Custom Claude Code skills
 │   └── hooks/        # Claude Code hooks

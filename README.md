@@ -164,7 +164,6 @@ docker compose up --build
 ├── docs/
 │   ├── plans/              # One implementation plan per ticket — input to /execute-plan
 │   ├── ralph-loops/        # One run log per ticket — written after each Ralph loop
-│   ├── adr/                # Architectural decision records
 │   └── assets/             # README images (Ralph lives here)
 ├── .claude/
 │   ├── skills/             # /create-plan, /execute-plan, /create-react-component
