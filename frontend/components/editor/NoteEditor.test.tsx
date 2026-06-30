@@ -34,12 +34,17 @@ describe("NoteEditor", () => {
     vi.useRealTimers();
   });
 
-  it("renders TitleInput, BodyTextarea, and EditorHeader", () => {
-    render(<NoteEditor note={note} />);
+  it("renders TitleInput, BodyTextarea, EditorHeader, and LastEditedStamp inside the card", () => {
+    const { container } = render(<NoteEditor note={note} />);
     expect(screen.getByDisplayValue("Test Title")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Test body content")).toBeInTheDocument();
     expect(screen.getByText("Personal")).toBeInTheDocument();
-    expect(screen.getByText(/Last Edited:/)).toBeInTheDocument();
+    // LastEditedStamp renders inside the card div (not in EditorHeader)
+    const stampEl = screen.getByText(/Last Edited:/);
+    expect(stampEl).toBeInTheDocument();
+    const cardDiv = container.querySelector(".rounded-\\[11px\\]");
+    expect(cardDiv).not.toBeNull();
+    expect(cardDiv!.contains(stampEl)).toBe(true);
   });
 
   it("changing title triggers notesService.patch after debounce with only the title field", () => {
