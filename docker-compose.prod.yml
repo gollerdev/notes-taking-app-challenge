@@ -1,5 +1,10 @@
-# Root compose file: brings up the full stack (Postgres + backend + frontend).
-# For backend-only work, you can still use backend/docker-compose.yml directly.
+# Production-style compose: builds the slim multi-stage targets (no bind
+# mounts, no hot reload). Use this to validate the smaller images:
+#
+#   docker compose -f docker-compose.prod.yml up --build
+#
+# Image sizes can be compared with:
+#   docker images | grep notes-taking-app-challenge
 
 services:
   db:
@@ -9,7 +14,7 @@ services:
       POSTGRES_USER: ${DB_USER:-notes}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-notes}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_prod:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-notes} -d ${DB_NAME:-notes}"]
       interval: 5s
@@ -19,14 +24,13 @@ services:
       - "5433:5432"
 
   web:
+    image: notes-web:prod
     build:
       context: ./backend
-      target: dev
+      target: prod
     env_file:
       - ./.env
     environment:
-      # Override DB_HOST so the app resolves Postgres via the compose network,
-      # regardless of what .env sets for local (non-Docker) use.
       DB_HOST: db
     depends_on:
       db:
@@ -39,31 +43,23 @@ services:
       start_period: 30s
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/app
-      - /app/.venv
 
   frontend:
+    image: notes-frontend:prod
     build:
       context: ./frontend
-      target: dev
+      target: runner
+      args:
+        # Baked into the client bundle at build time (browser-facing URL).
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
     environment:
-      # NEXT_PUBLIC_API_URL is browser-facing (host resolution). Use INTERNAL_API_URL
-      # for server-component fetches inside the container (resolves via Docker network).
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      # Server-component fetches resolve the backend over the compose network.
       INTERNAL_API_URL: ${INTERNAL_API_URL:-http://web:8000}
-      # Enable filesystem polling so Next.js Fast Refresh detects edits across the
-      # Windows -> Linux bind mount (inotify events don't propagate there).
-      WATCHPACK_POLLING: "true"
     depends_on:
       web:
         condition: service_healthy
     ports:
       - "3000:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
 
 volumes:
-  postgres_data:
+  postgres_data_prod:
