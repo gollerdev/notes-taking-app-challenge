@@ -1,14 +1,18 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { notesService } from "@/services/notes";
+
+const DEFAULT_CATEGORY = "personal";
 
 /** Transient page: creates a blank note and redirects to its editor. */
 export default function NewNotePage() {
   const { isAuthenticated, isHydrated } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const category = searchParams.get("category") || DEFAULT_CATEGORY;
   // Guards against React StrictMode running the effect twice in dev, which
   // would otherwise create two notes per visit.
   const hasCreated = useRef(false);
@@ -27,11 +31,11 @@ export default function NewNotePage() {
     hasCreated.current = true;
 
     void notesService
-      .create({ title: "Untitled", body: "", category: "personal" })
+      .create({ title: "Untitled", body: "", category })
       .then((newNote) => {
         router.replace(`/notes/${newNote.id}`);
       });
-  }, [isAuthenticated, isHydrated, router]);
+  }, [isAuthenticated, isHydrated, router, category]);
 
   if (!isHydrated || !isAuthenticated) {
     return null;

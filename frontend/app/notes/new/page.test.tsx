@@ -8,8 +8,10 @@ import { mockNote } from "@/test-utils/factories";
 // Mock next/navigation
 const mockPush = vi.fn();
 const mockReplace = vi.fn();
+const searchParamsState = { current: new URLSearchParams() };
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace }),
+  useSearchParams: () => searchParamsState.current,
 }));
 
 // Mock AuthContext
@@ -37,6 +39,7 @@ const authValue = {
 describe("NewNotePage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    searchParamsState.current = new URLSearchParams();
   });
 
   it("renders nothing while isHydrated is false", () => {
@@ -78,6 +81,23 @@ describe("NewNotePage", () => {
         title: "Untitled",
         body: "",
         category: "personal",
+      });
+    });
+  });
+
+  it("uses category from search params when provided", async () => {
+    searchParamsState.current = new URLSearchParams("category=school");
+    const newNote = mockNote({ id: "school-note-id" });
+    vi.mocked(useAuth).mockReturnValue(authValue);
+    vi.mocked(notesService.create).mockResolvedValue(newNote);
+
+    render(<NewNotePage />);
+
+    await waitFor(() => {
+      expect(notesService.create).toHaveBeenCalledWith({
+        title: "Untitled",
+        body: "",
+        category: "school",
       });
     });
   });

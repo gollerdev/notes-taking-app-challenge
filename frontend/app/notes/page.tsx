@@ -53,7 +53,7 @@ export default function NotesPage() {
     <div className="relative min-h-screen bg-cream">
       {/* Top-right New Note button — positioned per Figma at top-right */}
       <div className="absolute right-[34px] top-[39px] flex items-center gap-3">
-        <NewNoteButton />
+        <NewNoteButton category={activeCategory} />
       </div>
 
       {/* Sidebar + Content layout */}
