@@ -18,7 +18,9 @@ A full-stack notes app built with **Django REST** (backend) and **Next.js 14** (
 - [AI tools — what I used and how](#ai-tools--what-i-used-and-how)
   - [Custom skills](#custom-skills)
   - [Custom hooks (the guardrails)](#custom-hooks-the-guardrails)
-  - [The Ralph Loop](#the-ralph-loop)
+  - [CI/CD as the final gate](#cicd-as-the-final-gate)
+- [The Ralph Loop](#the-ralph-loop)
+- [Scope decisions](#scope-decisions)
 - [Running the app](#running-the-app)
 - [Repo structure](#repo-structure)
 
@@ -55,7 +57,7 @@ These are the decisions that shaped the project — both *how it was built* and 
 | **Fresh context per iteration (Ralph loop)** | Each execute-plan iteration spawns a *new* subagent with a clean context window. This prevents accumulated bias / context rot — every pass re-reads the actual repo state and the plan, instead of trusting a stale internal narrative. |
 | **`CLAUDE.md` as a constitution** | A hierarchical, strict, always-followed rule set (root + `backend/` + `frontend/`) encodes architecture, tooling, naming, and test standards. The agent inherits a senior engineer's standards on every run instead of improvising. |
 | **Explicit source-of-truth hierarchy** | Product video wins on *behavior*; Figma wins on *visuals*. Conflicts are resolved by a documented rule, so the agent never has to guess which input is authoritative. |
-| **Guardrails as code, not vibes** | Safety + quality are enforced by deterministic hooks and CI gates (below), not by hoping the model behaves. The AI literally *cannot* read a `.env`, commit a hardcoded secret, or run `rm -rf`. |
+| **Guardrails as code, not vibes** | Safety + quality are enforced by deterministic hooks and CI gates (below), not by hoping the model behaves. The AI literally *cannot* read a `.env`, write a hardcoded secret, or run `rm -rf`. |
 | **Claude installed in the repo** | GitHub Actions run an automated Claude code review on every PR and let me delegate small tickets to `@claude` directly — moving routine work entirely off my local machine. |
 | **Full traceability** | `docs/plans/` (intent) + `docs/ralph-loops/` (execution record) + PR (`Closes #N`) means any change can be traced from idea to merge. |
 
@@ -63,13 +65,13 @@ These are the decisions that shaped the project — both *how it was built* and 
 
 | Decision | Why |
 |---|---|
-| **Layered backend** (`Filter → View → Serializer → Service → Repository → ORM`) | Strict separation of concerns; each layer is unit-tested in isolation with the layer below mocked. Business logic never leaks into views, ORM queries never leak out of repositories. |
+| **Layered backend** (`Filter → View → Serializer → Service → Repository → ORM`) | Strict separation of concerns; View and Service layers are unit-tested with the layer below mocked, while the Repository layer is tested against the real database with randomized factory data. Business logic never leaks into views, ORM queries never leak out of repositories. |
 | **Layered frontend** (`Page → Service → lib/api → backend`, with `Context`/`hooks`/`components`) | One responsibility per layer; components never call `fetch` directly. Swapping the transport or auth mechanism touches exactly one file. |
-| **100% test coverage gate, both stacks** | CI fails under 100% line coverage (backend `pytest`, frontend `vitest`). Combined with **randomized factory data** (`factory_boy`/`faker`), tests catch bugs fixed fixtures would mask. |
+| **100% test coverage gate, both stacks** | CI fails under 100% line coverage (backend `pytest`) and 100% across lines, branches, functions, and statements (frontend `vitest`). Combined with **randomized factory data** (`factory_boy`/`faker`), tests catch bugs fixed fixtures would mask. |
 | **`uv`, not pip** · **PostgreSQL, not SQLite** · **`ruff` + `mypy --strict`** | Modern, reproducible, locked dependency graph (`uv.lock`); production-grade DB locally and in CI; lint + format + strict typing enforced before merge. |
-| **In-memory JWT storage on the frontend** (Issue #11) | Access tokens live in a module-level variable in `lib/api.ts` — no `localStorage`, no cookies. Intentionally lost on refresh, minimizing the token's exposure surface. |
-| **Design tokens, never magic values** | All Figma colors / fonts / spacing are centralized as Tailwind tokens; components consume `bg-cream`, `text-heading`, etc. A hook blocks hardcoded visual values from ever landing. |
-| **Dockerized everything** | `docker compose up` brings up `db` + `web` + `frontend`. The *same* compose stack runs locally, in CI, and under Playwright verification — so "works on my machine" and "works in CI" are the same machine. |
+| **localStorage JWT storage with in-memory cache** (Issue #11) | Access and refresh tokens are persisted in `localStorage` so sessions survive page reloads. A module-level variable in `lib/api.ts` acts as a fast in-memory cache. On 401, the wrapper attempts a single token refresh; on failure it clears both stores and redirects to `/login`. |
+| **Design tokens, never magic values** | All Figma colors / fonts / spacing are centralized as Tailwind tokens; components consume `bg-cream`, `text-heading`, etc. `CLAUDE.md` rules prohibit hardcoded visual values, and ESLint + Prettier hooks keep the frontend clean on every write. |
+| **Dockerized everything** | `docker compose up` brings up `db` + `web` + `frontend`. The same base compose stack runs locally and in CI (CI layers a `docker-compose.ci.yml` overlay for test settings) — so "works on my machine" and "works in CI" are the same containers. |
 | **OpenAPI schema as a contract** | `drf-spectacular` auto-generates the API schema; CI validates it (`--fail-on-warn`), so the API docs can never silently drift from the code. |
 
 ---
@@ -95,7 +97,7 @@ Project-specific slash commands in [`.claude/skills/`](.claude/skills/) that cod
 | [**`/create-react-component`**](.claude/skills/create-react-component/SKILL.md) | **Figma-first component generator.** Extracts a Figma node URL, calls `get_design_context`, builds the component using only design-token values (Tailwind only, no inline styles, no guessed values), and writes a co-located `.test.tsx` smoke test. |
 
 ### Custom hooks (the guardrails)
-Deterministic shell hooks in [`.claude/hooks/`](.claude/hooks/), wired up in [`.claude/settings.json`](.claude/settings.json). They run automatically on every tool call — this is what keeps an autonomous agent *safe* and the codebase *clean* without me watching every keystroke.
+Deterministic shell hooks in [`.claude/hooks/`](.claude/hooks/), wired up in [`.claude/settings.json`](.claude/settings.json). They fire on matched tool calls (Read, Bash, Write, Edit, MultiEdit) — this is what keeps an autonomous agent *safe* and the codebase *clean* without me watching every keystroke.
 
 **Safety — `PreToolUse` (can block the action, exit code 2):**
 
@@ -130,8 +132,6 @@ Three GitHub Actions workflows keep `main` permanently green:
 </p>
 
 The execution half of the workflow is a **"Ralph loop"**: run the same agent over and over, each time with a *fresh* context window, until the acceptance criteria are met (or a max-iteration cap is hit). The naming is a wink — like Ralph Wiggum, a single iteration is cheerfully simple-minded and forgets everything between runs. But that amnesia is the *feature*: because each pass re-reads the real repo and the plan from scratch, the loop self-corrects instead of compounding its own earlier mistakes. Bounded by `--min`/`--max`, every run is logged in [`docs/ralph-loops/`](docs/ralph-loops/) for a complete execution audit trail.
-
-> 📸 *Reviewers: the two Ralph images referenced above live in `docs/assets/`. Drop a couple of Ralph Wiggum PNGs there (e.g. `ralph-wiggum.png`, `ralph-loop.png`) and they'll render inline.*
 
 ---
 
@@ -182,5 +182,7 @@ docker compose up --build
 │   └── settings.json       # Hook wiring
 ├── .github/workflows/      # CI + Claude review + @claude delegation
 ├── docker-compose.yml      # Full stack: db + web + frontend
+├── docker-compose.ci.yml   # CI overlay (test settings, ephemeral credentials)
+├── docker-compose.prod.yml # Production-style builds (slim multi-stage, no bind mounts)
 └── CLAUDE.md               # Project-wide rules (+ backend/ and frontend/ variants)
 ```

@@ -16,7 +16,7 @@
 
 - Register with email + password — greeting shown: "Yay, New Friend!"
 - Login with email + password — greeting shown: "Yay, You're Back!"
-- JWT stored in httpOnly cookies (never localStorage)
+- JWT tokens (access + refresh) persisted in localStorage with in-memory cache
 - Redirect to main view on success
 
 ### Main view

@@ -18,29 +18,35 @@ Context (context/) <-- hooks (hooks/) <-- components (components/)
 frontend/
   app/
     layout.tsx              # Root layout (server component)
-    page.tsx                # Home page
+    page.tsx                # Home page (redirect gate)
+    fonts.ts                # Google Font loading (Inria Serif, Inter)
     health/
       page.tsx              # Health-check page (server shell)
     (auth)/
       layout.tsx            # Auth route-group layout (centered, cream bg)
       login/page.tsx        # Login page
       register/page.tsx     # Register page
-    (notes)/
-      page.tsx              # Notes list (future)
+    notes/
+      page.tsx              # Notes list
+      new/page.tsx          # Create new note
+      [id]/page.tsx         # Edit existing note
   components/
     ui/                     # Generic reusable UI components
-    auth/                   # Auth components (AuthForm, EmailInput, PasswordInput, SubmitButton)
-    notes/                  # Note-specific components (NoteCard, NoteForm, etc.)
+    auth/                   # Auth components (AuthForm, EmailInput, PasswordInput, SubmitButton, validation)
+    notes/                  # Note list components (NoteCard, NoteGrid, CategoryItem, CategorySidebar, EmptyState, NewNoteButton)
+    editor/                 # Note editor components (NoteEditor, EditorHeader, TitleInput, BodyTextarea, CategoryDropdown, LastEditedStamp)
     HealthStatus.tsx        # Health-check client component
   context/                  # React Context providers (e.g. AuthContext)
   hooks/                    # Custom hooks (e.g. useNotes)
   lib/
     api.ts                  # Base fetch wrapper (single source for base URL, headers, errors)
+    categoryColors.ts       # Category-to-color mapping
+    relativeDate.ts         # Relative date formatting
   services/                 # Service layer (one file per domain, e.g. notes.ts, auth.ts)
   types/
     index.ts                # Shared TypeScript interfaces (Note, User, CreateNotePayload, etc.)
   test-utils/
-    factories.ts            # Faker-based test data factories (introduced with first feature)
+    factories.ts            # Faker-based test data factories
   public/                   # Static assets
   tailwind.config.ts
   tsconfig.json
@@ -63,7 +69,7 @@ Route entry points. Server components by default. They import and compose compon
 
 #### Services (`services/`)
 
-Domain-specific API call orchestrators. Each service file groups related API calls (e.g., `services/notes.ts` has `getNotes`, `createNote`, `deleteNote`). Services call `lib/api.ts` -- never `fetch` directly.
+Domain-specific API call orchestrators. Each service file groups related API calls (e.g., `services/notes.ts` has `getAll`, `create`, `getById`, `patch`). Services call `lib/api.ts` -- never `fetch` directly.
 
 #### Base API Wrapper (`lib/api.ts`)
 
@@ -82,7 +88,8 @@ Custom hooks that encapsulate data fetching and state logic (e.g., `useNotes`). 
 #### Components (`components/`)
 
 - `ui/` -- Generic, reusable components (buttons, modals, inputs).
-- `notes/` -- Note-specific components (`NoteCard`, `NoteForm`, `CategoryFilter`, `DeleteButton`).
+- `notes/` -- Note list components (`NoteCard`, `NoteGrid`, `CategoryItem`, `CategorySidebar`, `EmptyState`, `NewNoteButton`).
+- `editor/` -- Note editor components (`NoteEditor`, `EditorHeader`, `TitleInput`, `BodyTextarea`, `CategoryDropdown`, `LastEditedStamp`).
 - Root-level components (e.g., `HealthStatus.tsx`) for cross-cutting concerns.
 
 ---
@@ -159,9 +166,9 @@ Before implementing any component with a designed UI, fetch its Figma node with 
 
 ## Token Storage
 
-JWT access tokens are stored **in memory only** (decided in Issue #11). Tokens are intentionally lost on page refresh -- no `localStorage`, no cookies.
+JWT tokens (access and refresh) are persisted in `localStorage` so sessions survive page reloads. A module-level variable in `lib/api.ts` acts as an in-memory cache for the access token.
 
-**Implementation:** A module-level variable in `lib/api.ts` holds the token. `AuthContext` calls `setAccessToken(token)` on login and `setAccessToken(null)` on logout. `getAccessToken()` returns the in-memory value, and `buildHeaders()` uses it to attach `Authorization: Bearer <token>` to outgoing requests. Call sites (services, hooks) are unaware of the storage mechanism.
+**Implementation:** `setAccessToken(token)` writes to both the in-memory variable and `localStorage`. `getAccessToken()` returns the in-memory value first, falling back to `localStorage` (e.g. after a reload). `AuthContext` restores tokens from `localStorage` on mount (post-hydration) and provides `login()` / `logout()` / `clearSession()`. On 401, `lib/api.ts` attempts a single token refresh using the stored refresh token; on failure it clears both stores and redirects to `/login`. Call sites (services, hooks) are unaware of the storage mechanism.
 
 ---
 
@@ -187,9 +194,12 @@ JWT access tokens are stored **in memory only** (decided in Issue #11). Tokens a
 | `app/(auth)/layout`   | Server    | Static centered layout                |
 | `app/(auth)/login`    | Client    | Form state + auth context             |
 | `app/(auth)/register` | Client    | Form state + auth context             |
+| `app/notes/page`      | Client    | `useNotes` + `useAuth`                |
+| `app/notes/new/page`  | Client    | Note creation form state              |
+| `app/notes/[id]/page` | Client    | Note editing form state               |
 | `HealthStatus`        | Client    | `useEffect` + `useState`              |
-| `NoteList` (future)   | Client    | `useEffect` + `useState`              |
-| `NoteForm` (future)   | Client    | Form state + event handlers           |
+| `NoteGrid`            | Client    | Renders note cards                    |
+| `NoteEditor`          | Client    | Form state + event handlers           |
 
 ---
 
@@ -227,7 +237,7 @@ JWT access tokens are stored **in memory only** (decided in Issue #11). Tokens a
 
 - **100% coverage** (lines, branches, functions, statements) is required on all testable code.
 - Coverage provider: `v8`.
-- Excluded from coverage: `app/layout.tsx`, `app/page.tsx`, `app/health/page.tsx` (server-component shells), `next.config.mjs`, `tailwind.config.ts`, `postcss.config.js`, `vitest.config.ts`, `vitest.setup.ts`, `types/**` (type-only files), `**/*.test.ts`, `**/*.test.tsx`, `**/*.d.ts`.
+- Excluded from coverage: `app/layout.tsx`, `app/page.tsx`, `app/health/page.tsx`, `app/fonts.ts`, `app/(auth)/layout.tsx` (server-component shells), `next.config.mjs`, `tailwind.config.ts`, `postcss.config.js`, `vitest.config.ts`, `vitest.setup.ts`, `types/**` (type-only files), `test-utils/**`, `**/*.test.ts`, `**/*.test.tsx`, `**/*.d.ts`.
 
 ### Test Co-location
 
@@ -273,8 +283,9 @@ The frontend reaches the backend via `NEXT_PUBLIC_API_URL` (`http://localhost:80
 All of the following must pass before a PR can be merged:
 
 ```bash
-npm run lint            # ESLint
-npx prettier --check .  # Formatting
-npx tsc --noEmit        # Type checking
-npm run test            # Vitest
+npm run typecheck       # tsc --noEmit
+npm run lint            # ESLint (next lint)
+npm run format:check    # Prettier
+npm run test            # Vitest (run once)
+npm run test:coverage   # Vitest with coverage thresholds (used in CI)
 ```

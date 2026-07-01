@@ -30,7 +30,7 @@ Follow these steps exactly:
 3. **Load project conventions** by reading all three CLAUDE.md files that exist:
    - `CLAUDE.md` — project-wide: branching, commits, agentic workflow, Figma rules, sources of truth
    - `backend/CLAUDE.md` — Django conventions: uv, DRF, pytest, ruff, PostgreSQL
-   - `frontend/CLAUDE.md` — Next.js conventions: App Router, Tailwind only, Figma-first, vitest, httpOnly cookies
+   - `frontend/CLAUDE.md` — Next.js conventions: App Router, Tailwind only, Figma-first, vitest, localStorage token storage
 
 4. **Read an existing plan** to internalize the exact format and section structure. Run `ls docs/plans/*.md 2>/dev/null | head -1` to find the most recent one, then read it. Skip this step if no plan files exist yet.
 

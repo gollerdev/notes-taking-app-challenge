@@ -6,7 +6,7 @@ Notes-taking app challenge for Turbo AI. Built with Django REST (backend) and Ne
 ## Tech stack
 | Layer | Stack |
 |---|---|
-| Backend | Python, uv, Django, Django REST Framework, djangorestframework-simplejwt, PostgreSQL, pytest, ruff, python-decouple |
+| Backend | Python, uv, Django, Django REST Framework, djangorestframework-simplejwt, PostgreSQL, pytest, ruff, mypy, python-decouple |
 | Frontend | Next.js 14 App Router, TypeScript, Tailwind CSS, vitest |
 | Infra | Docker, Docker Compose |
 
@@ -18,9 +18,12 @@ Notes-taking app challenge for Turbo AI. Built with Django REST (backend) and Ne
 ├── docs/
 │   ├── plans/        # Plan files — one per ticket, input to /execute-plan
 │   ├── ralph-loops/  # Loop logs — one per ticket, written after execution
+│   └── assets/       # README images
 ├── .claude/
 │   ├── skills/       # Custom Claude Code skills
-│   └── hooks/        # Claude Code hooks
+│   ├── hooks/        # Claude Code hooks
+│   └── settings.json # Hook wiring
+├── .github/workflows/ # CI + Claude review + @claude delegation
 └── CLAUDE.md         # This file
 ```
 
