@@ -41,6 +41,7 @@ GitHub Issue  ─►  /create-plan  ─►  human-in-the-loop review  ─►  /e
 4. **Log.** Every loop writes a run log to [`docs/ralph-loops/`](docs/ralph-loops/): date, iterations, what was done, deviations, failed ACs, lessons. Full audit trail.
 5. **Review & merge.** A PR is opened with `Closes #N`. Claude Code is **installed in the repo itself**, so it runs an automated code review on every PR and can be `@claude`-mentioned to fix bugs or address review comments. For simple issues (like bug fixes), the task was **assigned to Claude directly in the ticket**, no local execution required.
 6. **Guardrails everywhere.** Safety hooks, linter hooks, strict always-followed `CLAUDE.md` standards, and a CI/CD pipeline keep the AI on rails and the app in a permanently clean state.
+7. **Simple tickets Claude Code remote fixes.** Fox simple fixes, that did not need human verification, I created a ticket and directly assigned Claude Code to fix it in the comments, without any kind of local coding, prompting or supervision.
 
 ---
 
